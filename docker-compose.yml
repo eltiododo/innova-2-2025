@@ -1,0 +1,20 @@
+services:
+  postgres:
+    container_name: karting-db
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - innova-network
+
+volumes:
+  postgres-data:
+networks:
+  innova-network:
+    driver: bridge
