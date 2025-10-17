@@ -1,6 +1,6 @@
 services:
   postgres:
-    container_name: karting-db
+    container_name: innova-db
     image: postgres:latest
     ports:
       - "5432:5432"
