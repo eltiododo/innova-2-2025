@@ -16,7 +16,7 @@ public class MaintenancePredict {
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "car-id", referencedColumnName = "id")
-    private Vehiculo vehicle;
+    private Vehicle vehicle;
 
     private Date predicted;
 

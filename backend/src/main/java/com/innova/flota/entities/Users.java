@@ -11,9 +11,9 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name="usuarios")
-public class Usuarios {
-    public enum Roles{
+@Table(name = "users")
+public class Users {
+    public enum Roles {
         ADMIN,
         USER,
         DRIVER
@@ -22,18 +22,18 @@ public class Usuarios {
    @Id
    @GeneratedValue(strategy = GenerationType.IDENTITY)
    @Column(unique = true, nullable = false)
-    Long id;
+   private Long id;
+    
+   @Column(name = "username")
+   private String username;
 
-    @Column(name="username")
-    String username;
+   @Column(name = "email")
+   private String email;
 
-    @Column(name="email")
-    String email;
+   @Column(name = "phone")
+   private String phone;
 
-    @Column(name="phone")
-    String phone;
-
-    @Enumerated(EnumType.STRING)
-    Roles role;
+   @Enumerated(EnumType.STRING)
+   private Roles role;
 
 }

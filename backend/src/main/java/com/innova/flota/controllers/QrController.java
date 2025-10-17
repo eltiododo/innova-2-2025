@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.awt.image.BufferedImage;
 
+// ############# REST controller de prueba =) falta hacerlo en graphqls
 @RestController
 @RequestMapping("/api/qr")
 public class QrController {

@@ -7,8 +7,8 @@ import lombok.NoArgsConstructor;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name="Vehiculo")
-public class Vehiculo {
+@Table(name = "vehicle")
+public class Vehicle {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(unique = true, nullable = false)
@@ -23,6 +23,6 @@ public class Vehiculo {
     private int kmRecorrido;
 
     @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "driver-id", referencedColumnName = "id")
-    private Usuarios driver;
+    @JoinColumn(name = "driver_id", referencedColumnName = "id")
+    private Users driver;
 }
