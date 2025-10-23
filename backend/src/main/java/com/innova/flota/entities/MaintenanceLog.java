@@ -10,7 +10,7 @@ import java.util.Date;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name="Maintenance_Log")
+@Table(name = "maintenance_log")
 public class MaintenanceLog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,7 +25,7 @@ public class MaintenanceLog {
 
     private String status;
 
-    private int millaje;
+    private Integer millaje;
 
     private String notasExtra;
 

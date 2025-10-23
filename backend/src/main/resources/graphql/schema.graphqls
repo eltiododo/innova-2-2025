@@ -1,0 +1,67 @@
+enum Role {
+    ADMIN
+    USER
+    DRIVER
+}
+
+type Query {
+    vehicles: [Vehicle]
+    vehicleById(id: ID!): Vehicle
+}
+
+type Mutation {
+    # para definir mutacion
+    # nombreMetodo(quePido: TipoDato): TipoDatoQueDevuelvo
+    # ojo: nombre de la funcion en el controlador (java) debe ser el mismo!!!!
+    #       down to the nombres de las variables, tambien deben ser los mismos
+    addVehicle(vehicle: VehicleInput): Vehicle
+    addUser(users: UsersInput): Users
+}
+
+# ========================[ INPUTS ]========================
+
+input VehicleInput{
+    patente: String!
+    marca: String!
+    modelo: String!
+    kmRecorrido: Int!
+    driverId: ID!
+}
+
+input UsersInput{
+    username: String!
+    email: String!
+    phone: String!
+    role: Role!
+}
+
+# ========================[ ENTIDADES ]========================
+
+type Point {
+    latitude: Float!
+    longitude: Float!
+}
+
+type Users {
+    id: ID!
+    username: String!
+    email: String!
+    phone: String!
+    role: Role!
+}
+
+type Vehicle {
+    id: ID!
+    patente: String!
+    marca: String!
+    modelo: String!
+    kmRecorrido: Int!
+    driver: Users!
+}
+
+type Workshop {
+    id: ID!
+    name: String!
+    direction: String!
+    location: Point
+}
