@@ -1,0 +1,84 @@
+// FALTA:
+
+// suscripciones del SAAS
+// conductores
+// evaluar si hace falta temas de gps en la BD
+
+Table users {
+  id int [pk, increment]
+  name varchar
+  email varchar
+  phone varchar
+  created_at timestamp
+}
+
+Table companies {
+  id int [pk, increment]
+  name varchar
+  address text
+  phone varchar
+  created_at timestamp
+}
+
+Table vehicles {
+  id int [pk, increment]
+  company_id int [ref: > companies.id]
+  license_plate varchar
+  brand varchar
+  model varchar
+  year int
+  distance_km decimal
+  last_maintenance_date date
+  created_at timestamp
+}
+
+Table gps_tracking {
+  id int [pk, increment]
+  vehicle_id int [ref: > vehicles.id]
+  latitude decimal(9,6)
+  longitude decimal(9,6)
+  speed decimal(5,2)
+  timestamp timestamp
+  created_at timestamp
+}
+
+Table maintenance_types {
+  id int [pk, increment]
+  name varchar
+  description text
+  recommended_interval_km int
+}
+
+Table maintenance_predictions {
+  id int [pk, increment]
+  vehicle_id int [ref: > vehicles.id]
+  maintenance_type_id int [ref: > maintenance_types.id]
+  predicted_date date
+  predicted_mileage decimal
+  confidence_score decimal(3,2)
+  created_at timestamp
+}
+
+Table workshops {
+  id int [pk, increment]
+  name varchar
+  address text
+  contact_email varchar
+  contact_phone varchar
+  latitude decimal(9,6)
+  longitude decimal(9,6)
+  created_at timestamp
+}
+
+Table maintenance_schedules {
+  id int [pk, increment]
+  vehicle_id int [ref: > vehicles.id]
+  workshop_id int [ref: > workshops.id]
+  maintenance_type_id int [ref: > maintenance_types.id]
+  scheduled_date date
+  status varchar // (pending, confirmed, completed)
+  actual_mileage decimal
+  notes text
+  created_at timestamp
+}
+

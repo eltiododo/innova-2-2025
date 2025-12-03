@@ -1,0 +1,29 @@
+package com.innova.flota.services;
+
+import com.innova.flota.entities.Users;
+import com.innova.flota.repositories.UsersRepository;
+import lombok.AllArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+@AllArgsConstructor
+public class UserService {
+
+    private final UsersRepository usersRepository;
+
+    public Users createUser(Users user) {
+        // Here we could add validation logic, e.g., check if email already exists
+        // For now, we just save the user
+        return usersRepository.save(user);
+    }
+
+    public List<Users> findAllUsers() {
+        return usersRepository.findAll();
+    }
+
+    public Users findUserById(Long id) {
+        return usersRepository.findById(id).orElse(null);
+    }
+}
