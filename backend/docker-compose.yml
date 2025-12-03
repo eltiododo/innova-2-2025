@@ -1,7 +1,7 @@
 services:
   postgres:
     container_name: innova-db
-    image: postgres:latest
+    image: postgres:17-alpine
     ports:
       - "5432:5432"
     environment:
@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql
     networks:
       - innova-network
 
