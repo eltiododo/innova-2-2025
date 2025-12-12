@@ -25,6 +25,11 @@ input VehicleInput{
     marca: String!
     modelo: String!
     kmRecorrido: Int!
+    year: Int
+    fuelEfficiency: Float
+    batteryHealth: Float
+    engineHealth: Float
+    odometerReading: Float
     driverId: ID!
 }
 
@@ -56,6 +61,11 @@ type Vehicle {
     marca: String!
     modelo: String!
     kmRecorrido: Int!
+    year: Int
+    fuelEfficiency: Float
+    batteryHealth: Float
+    engineHealth: Float
+    odometerReading: Float
     driver: Users!
 }
 
