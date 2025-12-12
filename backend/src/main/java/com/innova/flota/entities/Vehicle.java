@@ -24,15 +24,31 @@ public class Vehicle {
 
     private int kmRecorrido;
 
+    private Integer year;
+
+    private Double fuelEfficiency;
+
+    private Double batteryHealth;
+
+    private Double engineHealth;
+
+    private Double odometerReading;
+
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "driver_id", referencedColumnName = "id")
     private Users driver;
 
-    public Vehicle(String patente, String marca, String modelo, int kmRecorrido, Users driver) {
+    public Vehicle(String patente, String marca, String modelo, int kmRecorrido, Integer year, Double fuelEfficiency,
+            Double batteryHealth, Double engineHealth, Double odometerReading, Users driver) {
         this.patente = patente;
         this.marca = marca;
         this.modelo = modelo;
         this.kmRecorrido = kmRecorrido;
+        this.year = year;
+        this.fuelEfficiency = fuelEfficiency;
+        this.batteryHealth = batteryHealth;
+        this.engineHealth = engineHealth;
+        this.odometerReading = odometerReading;
         this.driver = driver;
     }
 }

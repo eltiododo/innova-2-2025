@@ -31,6 +31,10 @@ public class TravelLog {
 
     private Float avgSpeed;
 
+    private Float avgAcceleration;
+
+    private String state;
+
     private Timestamp arrivalTime;
 
     private Timestamp createdAt;

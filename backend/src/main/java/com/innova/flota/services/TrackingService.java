@@ -27,6 +27,7 @@ public class TrackingService {
         TravelLog travelLog = TravelLog.builder()
                 .vehicle(vehicle)
                 .startPosition(startPos)
+                .state("IN_PROGRESS")
                 .createdAt(Timestamp.from(Instant.now()))
                 .build();
 
@@ -41,7 +42,19 @@ public class TrackingService {
         }
 
         travelLog.setEndPosition(endPos);
+        travelLog.setState("ARRIVED");
         travelLog.setArrivalTime(Timestamp.from(Instant.now()));
+        return travelLogRepository.save(travelLog).getId();
+    }
+
+    public Long cancelTracking(Long trackingId) {
+        TravelLog travelLog = travelLogRepository.findById(trackingId).orElse(null);
+
+        if (travelLog == null) {
+            return (long) -1;
+        }
+
+        travelLog.setState("CANCELED");
         return travelLogRepository.save(travelLog).getId();
     }
 }
