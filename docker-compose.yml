@@ -1,0 +1,63 @@
+services:
+  # 1. Database
+  postgres:
+    container_name: innova-db
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - innova-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Python ML API
+  ml-api:
+    container_name: innova-ml-api
+    build:
+      context: ./vehicle-telemetry-scikit
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    networks:
+      - innova-network
+    volumes:
+      - ./vehicle-telemetry-scikit/maintenance_model.pkl:/app/maintenance_model.pkl # Mount model to persist if regenerated
+      - ./vehicle-telemetry-scikit/src:/app/src # Hot reload for dev (optional)
+
+  # 3. Spring Boot Backend
+  backend:
+    container_name: innova-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgres
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      ML_API_URL: http://innova-ml-api:8000/predict
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ml-api:
+        condition: service_started
+    networks:
+      - innova-network
+
+volumes:
+  postgres-data:
+
+
+networks:
+  innova-network:
+    driver: bridge
