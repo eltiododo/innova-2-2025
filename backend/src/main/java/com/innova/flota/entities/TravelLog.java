@@ -22,11 +22,13 @@ public class TravelLog {
     private Long id;
 
     @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "vehicle-id", referencedColumnName = "id")
+    @JoinColumn(name = "vehicle_id", referencedColumnName = "id")
     private Vehicle vehicle;
 
+    @Column(name = "start_position", columnDefinition = "point")
     private Point startPosition;
 
+    @Column(name = "end_position", columnDefinition = "point")
     private Point endPosition;
 
     private Float avgSpeed;
