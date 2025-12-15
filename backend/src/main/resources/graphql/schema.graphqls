@@ -7,6 +7,10 @@ enum Role {
 type Query {
     vehicles: [Vehicle]
     vehicleById(id: ID!): Vehicle
+    travelLogs: [TravelLog]
+    travelLogById(id: ID!): TravelLog
+    maintenanceTickets: [MaintenanceTicket]
+    maintenanceTicketById(id: ID!): MaintenanceTicket
 }
 
 type Mutation {
@@ -16,6 +20,9 @@ type Mutation {
     #       down to the nombres de las variables, tambien deben ser los mismos
     addVehicle(vehicle: VehicleInput): Vehicle
     addUser(users: UsersInput): Users
+    addTravelLog(travelLog: TravelLogInput): TravelLog
+    addMaintenanceTicket(maintenanceTicket: MaintenanceTicketInput): MaintenanceTicket
+    scheduleMaintenance(scheduledMaintenance: ScheduledMaintenanceInput): MaintenanceTicket
 }
 
 # ========================[ INPUTS ]========================
@@ -40,11 +47,37 @@ input UsersInput{
     role: Role!
 }
 
+input TravelLogInput{
+    vehicleId: ID!
+    startLatitude: Float!
+    startLongitude: Float!
+    endLatitude: Float
+    endLongitude: Float
+    avgSpeed: Float
+    avgAcceleration: Float
+    state: String
+}
+
+input MaintenanceTicketInput{
+    vehicleId: ID!
+    workshopId: ID!
+    fechaMantencion: Float!
+    status: String!
+    millaje: Int
+    notasExtra: String
+}
+
+input ScheduledMaintenanceInput {
+    qrCodeId: ID!
+    workshopId: ID!
+    date: String
+}
+
 # ========================[ ENTIDADES ]========================
 
 type Point {
-    latitude: Float!
-    longitude: Float!
+    x: Float!
+    y: Float!
 }
 
 type Users {
@@ -74,4 +107,27 @@ type Workshop {
     name: String!
     direction: String!
     location: Point
+}
+
+type TravelLog {
+    id: ID!
+    vehicle: Vehicle!
+    startPosition: Point!
+    endPosition: Point!
+    avgSpeed: Float
+    avgAcceleration: Float
+    state: String
+    arrivalTime: String
+    createdAt: String
+}
+
+type MaintenanceTicket {
+    id: ID!
+    vehicleID: ID!
+    workshopId: ID!
+    fechaMantencion: String
+    status: String!
+    millaje: Int
+    notasExtra: String
+    createdAt: String
 }

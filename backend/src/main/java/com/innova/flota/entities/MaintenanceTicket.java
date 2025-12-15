@@ -2,6 +2,7 @@ package com.innova.flota.entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,8 +13,9 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-@Table(name = "maintenance_log")
-public class MaintenanceLog {
+@Builder
+@Table(name = "maintenance_ticket")
+public class MaintenanceTicket {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(unique = true, nullable = false)

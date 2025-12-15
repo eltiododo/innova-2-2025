@@ -20,6 +20,8 @@ public class Workshop {
 
     private String direction;
 
+    @jakarta.persistence.Convert(converter = PointAttributeConverter.class)
+    @Column(name = "location", columnDefinition = "point")
     Point location;
 
 }

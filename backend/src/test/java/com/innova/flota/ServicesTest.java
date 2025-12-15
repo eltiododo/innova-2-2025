@@ -1,9 +1,10 @@
 package com.innova.flota;
 
-import com.innova.flota.entities.MaintenanceLog;
+import com.innova.flota.entities.MaintenanceTicket;
 import com.innova.flota.entities.Users;
 import com.innova.flota.entities.Vehicle;
-import com.innova.flota.repositories.MaintenanceLogRepository;
+import com.innova.flota.repositories.MaintenanceTicketRepository;
+import com.innova.flota.repositories.QRCodeRepository;
 import com.innova.flota.repositories.UsersRepository;
 import com.innova.flota.repositories.VehicleRepository;
 import com.innova.flota.services.MaintenanceService;
@@ -15,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Date;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,7 +30,9 @@ class ServicesTest {
     @Mock
     private VehicleRepository vehicleRepository;
     @Mock
-    private MaintenanceLogRepository maintenanceLogRepository;
+    private MaintenanceTicketRepository maintenanceTicketRepository;
+    @Mock
+    private QRCodeRepository qrCodeRepository;
 
     @InjectMocks
     private UserService userService;
@@ -82,20 +86,24 @@ class ServicesTest {
 
     @Test
     void testScheduleMaintenance() {
-        MaintenanceLog log = new MaintenanceLog();
+        MaintenanceTicket log = new MaintenanceTicket();
+        log.setId(1L);
         log.setVehicleID(1L);
+        log.setWorkshopId(2L);
+        //Date maintenanceDate = new Date();
+        String maintenanceDate = "2025-12-15T15:50:24.536Z";
 
-        when(vehicleRepository.existsById(1L)).thenReturn(true);
-        when(maintenanceLogRepository.save(any(MaintenanceLog.class))).thenReturn(log);
+        when(qrCodeRepository.existsById(1L)).thenReturn(true);
+        when(maintenanceTicketRepository.save(any(MaintenanceTicket.class))).thenReturn(log);
 
-        MaintenanceLog scheduled = maintenanceService.scheduleMaintenance(log);
+        MaintenanceTicket scheduled = maintenanceService.scheduleMaintenance(1L, 2L, maintenanceDate);
         assertEquals("PENDING", scheduled.getStatus());
         assertNotNull(scheduled.getCreatedAt());
     }
 
     @Test
     void testCompleteMaintenance() {
-        MaintenanceLog log = new MaintenanceLog();
+        MaintenanceTicket log = new MaintenanceTicket();
         log.setId(1L);
         log.setVehicleID(1L);
         log.setStatus("PENDING");
@@ -104,11 +112,11 @@ class ServicesTest {
         vehicle.setId(1L);
         vehicle.setKmRecorrido(1000);
 
-        when(maintenanceLogRepository.findById(1L)).thenReturn(Optional.of(log));
+        when(maintenanceTicketRepository.findById(1L)).thenReturn(Optional.of(log));
         when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
-        when(maintenanceLogRepository.save(any(MaintenanceLog.class))).thenReturn(log);
+        when(maintenanceTicketRepository.save(any(MaintenanceTicket.class))).thenReturn(log);
 
-        MaintenanceLog completed = maintenanceService.completeMaintenance(1L, "Done", 1200);
+        MaintenanceTicket completed = maintenanceService.completeMaintenance(1L, "Done", 1200);
 
         assertEquals("COMPLETED", completed.getStatus());
         assertEquals(1200, completed.getMillaje());

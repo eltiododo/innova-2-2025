@@ -1,36 +1,54 @@
 package com.innova.flota.services;
 
-import com.innova.flota.entities.MaintenanceLog;
+import com.innova.flota.entities.MaintenanceTicket;
+import com.innova.flota.entities.QRCode;
 import com.innova.flota.entities.Vehicle;
-import com.innova.flota.repositories.MaintenanceLogRepository;
+import com.innova.flota.repositories.MaintenanceTicketRepository;
+import com.innova.flota.repositories.QRCodeRepository;
 import com.innova.flota.repositories.VehicleRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 
 @Service
 @AllArgsConstructor
 public class MaintenanceService {
 
-    private final MaintenanceLogRepository maintenanceLogRepository;
+    private final MaintenanceTicketRepository maintenanceTicketRepository;
     private final VehicleRepository vehicleRepository;
+    private final QRCodeRepository qrCodeRepository;
+    private final ObjectMapper objectMapper;
 
-    public MaintenanceLog scheduleMaintenance(MaintenanceLog log) {
+    public MaintenanceTicket scheduleMaintenance(Long qrCodeId, Long workshopId, String maintenanceDate) {
         // Ensure vehicle exists
-        if (!vehicleRepository.existsById(log.getVehicleID())) {
-            throw new RuntimeException("Vehicle not found for ID: " + log.getVehicleID());
+        if (!qrCodeRepository.existsById(qrCodeId)) {
+            throw new RuntimeException("QR not found for ID: " + qrCodeId);
         }
 
-        log.setStatus("PENDING");
-        log.setCreatedAt(Timestamp.from(Instant.now()));
-        return maintenanceLogRepository.save(log);
+        QRCode qrCode = qrCodeRepository.findById(qrCodeId).get();
+        String barcode = qrCode.getBarcodeText();
+        JsonNode barcodeNode = objectMapper.valueToTree(barcode);
+
+        MaintenanceTicket maintenanceTicket = MaintenanceTicket.builder()
+            .vehicleID(barcodeNode.get("id_vehicle").asLong())
+            .workshopId(workshopId)
+            .status("PENDING")
+            .fechaMantencion(Date.from(Instant.parse(maintenanceDate)))
+            .createdAt(Timestamp.from(Instant.now()))
+            .build();
+
+        return maintenanceTicketRepository.save(maintenanceTicket);
     }
 
-    public MaintenanceLog completeMaintenance(Long maintenanceId, String notes, Integer finalMileage) {
-        MaintenanceLog log = maintenanceLogRepository.findById(maintenanceId)
+    public MaintenanceTicket completeMaintenance(Long maintenanceId, String notes, Integer finalMileage) {
+        MaintenanceTicket log = maintenanceTicketRepository.findById(maintenanceId)
                 .orElseThrow(() -> new RuntimeException("Maintenance Log not found"));
 
         log.setStatus("COMPLETED");
@@ -50,10 +68,10 @@ public class MaintenanceService {
             log.setMillaje(finalMileage);
         }
 
-        return maintenanceLogRepository.save(log);
+        return maintenanceTicketRepository.save(log);
     }
 
-    public List<MaintenanceLog> getMaintenanceHistory(Long vehicleId) {
+    public List<MaintenanceTicket> getMaintenanceHistory(Long vehicleId) {
         // This assumes we might need a custom query in repository if not available,
         // but for now let's see if we can filter or if we need to add a method to repo.
         // Since I can't easily change repo interface without checking it first,
@@ -64,7 +82,7 @@ public class MaintenanceService {
         // For this step, I will assume the repo needs the method.
         // Wait, I can't edit the repo in this same step safely if I'm not sure.
         // I'll leave this method commented or simple for now and fix repo in next step.
-        return maintenanceLogRepository.findAll().stream()
+        return maintenanceTicketRepository.findAll().stream()
                 .filter(log -> log.getVehicleID().equals(vehicleId))
                 .toList();
     }

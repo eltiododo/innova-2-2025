@@ -51,4 +51,19 @@ public class Vehicle {
         this.odometerReading = odometerReading;
         this.driver = driver;
     }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "id=" + id +
+                ", patente='" + patente + '\'' +
+                ", marca='" + marca + '\'' +
+                ", modelo='" + modelo + '\'' +
+                ", year=" + year +
+                ", fuelEfficiency=" + fuelEfficiency +
+                ", batteryHealth=" + batteryHealth +
+                ", engineHealth=" + engineHealth +
+                ", odometerReading=" + odometerReading +
+                '}';
+    }
 }
