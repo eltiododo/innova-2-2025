@@ -5,8 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
-
 @Entity
 @Data
 @AllArgsConstructor
@@ -19,21 +17,24 @@ public class Users {
         DRIVER
     }
 
-   @Id
-   @GeneratedValue(strategy = GenerationType.IDENTITY)
-   @Column(unique = true, nullable = false)
-   private Long id;
-    
-   @Column(name = "username")
-   private String username;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(unique = true, nullable = false)
+    private Long id;
 
-   @Column(name = "email")
-   private String email;
+    @Column(name = "username")
+    private String username;
 
-   @Column(name = "phone")
-   private String phone;
+    @Column(name = "email")
+    private String email;
 
-   @Enumerated(EnumType.STRING)
-   private Roles role;
+    @Column(name = "phone")
+    private String phone;
+
+    @Column(name = "password", nullable = false)
+    private String password;
+
+    @Enumerated(EnumType.STRING)
+    private Roles role;
 
 }

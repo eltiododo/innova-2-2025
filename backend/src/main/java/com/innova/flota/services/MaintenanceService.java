@@ -8,9 +8,9 @@ import com.innova.flota.repositories.QRCodeRepository;
 import com.innova.flota.repositories.VehicleRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.sql.Timestamp;
 import java.time.Instant;

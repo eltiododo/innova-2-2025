@@ -9,8 +9,8 @@ import com.innova.flota.entities.Vehicle;
 import com.innova.flota.repositories.QRCodeRepository;
 import com.innova.flota.repositories.VehicleRepository;
 import org.springframework.stereotype.Service;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.awt.image.BufferedImage;
 import java.util.Optional;

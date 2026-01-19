@@ -11,6 +11,8 @@ type Query {
     travelLogById(id: ID!): TravelLog
     maintenanceTickets: [MaintenanceTicket]
     maintenanceTicketById(id: ID!): MaintenanceTicket
+    # Authentication
+    me: Users
 }
 
 type Mutation {
@@ -23,6 +25,9 @@ type Mutation {
     addTravelLog(travelLog: TravelLogInput): TravelLog
     addMaintenanceTicket(maintenanceTicket: MaintenanceTicketInput): MaintenanceTicket
     scheduleMaintenance(scheduledMaintenance: ScheduledMaintenanceInput): MaintenanceTicket
+    # Authentication
+    register(input: RegisterInput!): AuthPayload
+    login(input: LoginInput!): AuthPayload
 }
 
 # ========================[ INPUTS ]========================
@@ -71,6 +76,26 @@ input ScheduledMaintenanceInput {
     qrCodeId: ID!
     workshopId: ID!
     date: String
+}
+
+# ========================[ AUTHENTICATION ]========================
+
+input RegisterInput {
+    username: String!
+    email: String!
+    password: String!
+    phone: String!
+    role: String!
+}
+
+input LoginInput {
+    email: String!
+    password: String!
+}
+
+type AuthPayload {
+    token: String!
+    user: Users!
 }
 
 # ========================[ ENTIDADES ]========================

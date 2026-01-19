@@ -1,0 +1,91 @@
+package com.innova.flota.services;
+
+import com.innova.flota.entities.Users;
+import com.innova.flota.repositories.UsersRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class AuthService {
+
+    private final UsersRepository usersRepository;
+    private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
+
+    public record AuthPayload(String token, Users user) {
+    }
+
+    public record RegisterInput(String username, String email, String password, String phone, Users.Roles role) {
+    }
+
+    public record LoginInput(String email, String password) {
+    }
+
+    public AuthPayload register(RegisterInput input) {
+        // Validate email doesn't exist
+        if (usersRepository.existsByEmail(input.email())) {
+            throw new IllegalArgumentException("Email already registered");
+        }
+
+        // Validate username doesn't exist
+        if (usersRepository.existsByUsername(input.username())) {
+            throw new IllegalArgumentException("Username already taken");
+        }
+
+        // Create user with hashed password
+        Users user = new Users();
+        user.setUsername(input.username());
+        user.setEmail(input.email());
+        user.setPhone(input.phone());
+        user.setPassword(passwordEncoder.encode(input.password()));
+        user.setRole(input.role());
+
+        Users savedUser = usersRepository.save(user);
+
+        // Generate token
+        String token = jwtService.generateToken(savedUser.getEmail());
+
+        return new AuthPayload(token, savedUser);
+    }
+
+    public AuthPayload login(LoginInput input) {
+        Users user = usersRepository.findByEmail(input.email())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
+
+        if (!passwordEncoder.matches(input.password(), user.getPassword())) {
+            throw new IllegalArgumentException("Invalid credentials");
+        }
+
+        String token = jwtService.generateToken(user.getEmail());
+
+        return new AuthPayload(token, user);
+    }
+
+    public Users getUserFromToken(String token) {
+        if (token == null || token.isEmpty()) {
+            return null;
+        }
+
+        try {
+            String email = jwtService.extractUsername(token);
+            return usersRepository.findByEmail(email).orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public boolean validateToken(String token) {
+        if (token == null || token.isEmpty()) {
+            return false;
+        }
+
+        try {
+            String email = jwtService.extractUsername(token);
+            return jwtService.isTokenValid(token, email);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+}
