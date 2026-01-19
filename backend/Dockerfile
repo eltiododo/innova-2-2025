@@ -5,8 +5,8 @@ COPY pom.xml .
 COPY src ./src
 RUN mvn clean package -DskipTests
 
-# Run stage
-FROM eclipse-temurin:17-jdk-alpine
+# Run stage - usando imagen compatible con ARM64 por el mac no me dejaba sin esto
+FROM eclipse-temurin:17-jre
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080

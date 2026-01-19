@@ -1,6 +1,6 @@
 package com.innova.flota.controllers;
 
-import com.innova.flota.entities.Users;
+import com.innova.flota.model.Users;
 import com.innova.flota.services.AuthService;
 import graphql.GraphQLContext;
 import lombok.RequiredArgsConstructor;

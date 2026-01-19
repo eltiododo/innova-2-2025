@@ -1,6 +1,6 @@
 package com.innova.flota.repositories;
 
-import com.innova.flota.entities.MaintenanceTicket;
+import com.innova.flota.model.MaintenanceTicket;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

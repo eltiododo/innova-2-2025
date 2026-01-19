@@ -1,6 +1,6 @@
 package com.innova.flota.repositories;
 
-import com.innova.flota.entities.TravelLog;
+import com.innova.flota.model.TravelLog;
 import org.postgresql.util.PGobject;
 import org.springframework.stereotype.Repository;
 

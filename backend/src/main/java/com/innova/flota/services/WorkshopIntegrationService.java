@@ -1,6 +1,6 @@
 package com.innova.flota.services;
 
-import com.innova.flota.entities.Vehicle;
+import com.innova.flota.model.Vehicle;
 import com.innova.flota.repositories.VehicleRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;

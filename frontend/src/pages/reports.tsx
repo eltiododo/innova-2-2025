@@ -10,7 +10,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
     Select,
     SelectContent,
@@ -18,10 +17,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { FileText, Search, Download, Filter, Car, Battery, Wrench, Gauge } from 'lucide-react';
+import { FileText, Search, Battery, Wrench, Gauge } from 'lucide-react';
 import type { VehicleWithStatus, VehicleStatus } from '@/types';
 
-// Mock data
 const mockVehicles: VehicleWithStatus[] = [
     { id: '1', patente: 'ABCD-12', marca: 'Toyota', modelo: 'Hilux', kmRecorrido: 45000, year: 2022, batteryHealth: 95, engineHealth: 88, fuelEfficiency: 12.5, driver: { id: '1', username: 'Juan Pérez', email: '', phone: '', role: 'DRIVER' }, status: 'operational' },
     { id: '2', patente: 'EFGH-34', marca: 'Ford', modelo: 'Ranger', kmRecorrido: 62000, year: 2021, batteryHealth: 82, engineHealth: 75, fuelEfficiency: 11.8, driver: { id: '2', username: 'María García', email: '', phone: '', role: 'DRIVER' }, status: 'pending_review' },
@@ -41,9 +39,16 @@ const statusConfig: Record<VehicleStatus, { label: string; className: string }> 
 
 function getHealthColor(health: number | undefined) {
     if (!health) return 'text-muted-foreground';
-    if (health >= 80) return 'text-green-600';
-    if (health >= 60) return 'text-yellow-600';
-    return 'text-red-600';
+    if (health >= 80) return 'text-green-600 dark:text-green-500';
+    if (health >= 60) return 'text-yellow-600 dark:text-yellow-500';
+    return 'text-red-600 dark:text-red-500';
+}
+
+function getHealthBadge(health: number | undefined) {
+    if (!health) return <Badge variant="outline">N/A</Badge>;
+    if (health >= 80) return <Badge className="bg-green-100 text-green-800 dark:bg-green-950/50 dark:text-green-400 border-green-200">{health}%</Badge>;
+    if (health >= 60) return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-950/50 dark:text-yellow-400 border-yellow-200">{health}%</Badge>;
+    return <Badge className="bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-400 border-red-200">{health}%</Badge>;
 }
 
 export function ReportsPage() {
@@ -80,25 +85,18 @@ export function ReportsPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                        <FileText className="h-8 w-8 text-indigo-500" />
-                        Reportes y Estado
-                    </h1>
-                    <p className="text-muted-foreground mt-1">
-                        Vista general del estado de todos los vehículos
-                    </p>
-                </div>
-                <Button variant="outline">
-                    <Download className="w-4 h-4 mr-2" />
-                    Exportar Reporte
-                </Button>
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                    <FileText className="h-7 w-7 text-indigo-500" />
+                    Reportes y Estado
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                    Vista general del estado de todos los vehículos
+                </p>
             </div>
 
-            {/* Status Summary Cards */}
             <div className="grid gap-4 md:grid-cols-3">
-                <Card className="border-l-4 border-l-green-500">
+                <Card className="border-l-4 border-l-green-500 hover:shadow-md transition-shadow">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Operativos</CardTitle>
                     </CardHeader>
@@ -110,7 +108,7 @@ export function ReportsPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="border-l-4 border-l-yellow-500">
+                <Card className="border-l-4 border-l-yellow-500 hover:shadow-md transition-shadow">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Revisión Pendiente</CardTitle>
                     </CardHeader>
@@ -120,7 +118,7 @@ export function ReportsPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="border-l-4 border-l-red-500">
+                <Card className="border-l-4 border-l-red-500 hover:shadow-md transition-shadow">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">En Mantención</CardTitle>
                     </CardHeader>
@@ -131,8 +129,7 @@ export function ReportsPage() {
                 </Card>
             </div>
 
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -143,12 +140,11 @@ export function ReportsPage() {
                     />
                 </div>
                 <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as VehicleStatus | 'all')}>
-                    <SelectTrigger className="w-full sm:w-[200px]">
-                        <Filter className="w-4 h-4 mr-2" />
+                    <SelectTrigger className="w-full sm:w-[220px]">
                         <SelectValue placeholder="Filtrar por estado" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="all">Todos los estados</SelectItem>
                         <SelectItem value="operational">Operativo</SelectItem>
                         <SelectItem value="pending_review">Revisión Pendiente</SelectItem>
                         <SelectItem value="in_maintenance">En Mantención</SelectItem>
@@ -156,79 +152,87 @@ export function ReportsPage() {
                 </Select>
             </div>
 
-            {/* Table */}
+            {searchTerm || statusFilter !== 'all' ? (
+                <p className="text-sm text-muted-foreground">
+                    Mostrando <strong className="text-foreground">{filteredVehicles.length}</strong> de <strong className="text-foreground">{vehicles.length}</strong> vehículos
+                </p>
+            ) : null}
+
             <Card>
                 <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Vehículo</TableHead>
-                                <TableHead>Conductor</TableHead>
-                                <TableHead className="text-center">Kilometraje</TableHead>
-                                <TableHead className="text-center">
-                                    <div className="flex items-center justify-center gap-1">
-                                        <Battery className="w-4 h-4" /> Batería
-                                    </div>
-                                </TableHead>
-                                <TableHead className="text-center">
-                                    <div className="flex items-center justify-center gap-1">
-                                        <Wrench className="w-4 h-4" /> Motor
-                                    </div>
-                                </TableHead>
-                                <TableHead className="text-center">
-                                    <div className="flex items-center justify-center gap-1">
-                                        <Gauge className="w-4 h-4" /> Eficiencia
-                                    </div>
-                                </TableHead>
-                                <TableHead className="text-center">Estado</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredVehicles.map((vehicle) => (
-                                <TableRow key={vehicle.id} className="hover:bg-muted/50">
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
-                                                <Car className="w-5 h-5 text-muted-foreground" />
-                                            </div>
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/50">
+                                    <TableHead className="w-[200px]">Vehículo</TableHead>
+                                    <TableHead>Conductor</TableHead>
+                                    <TableHead className="text-center">Kilometraje</TableHead>
+                                    <TableHead className="text-center">
+                                        <div className="flex items-center justify-center gap-1">
+                                            <Battery className="w-3 h-3" />
+                                            <span className="hidden sm:inline">Batería</span>
+                                        </div>
+                                    </TableHead>
+                                    <TableHead className="text-center">
+                                        <div className="flex items-center justify-center gap-1">
+                                            <Wrench className="w-3 h-3" />
+                                            <span className="hidden sm:inline">Motor</span>
+                                        </div>
+                                    </TableHead>
+                                    <TableHead className="text-center">
+                                        <div className="flex items-center justify-center gap-1">
+                                            <Gauge className="w-3 h-3" />
+                                            <span className="hidden sm:inline">Eficiencia</span>
+                                        </div>
+                                    </TableHead>
+                                    <TableHead className="text-center">Estado</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredVehicles.map((vehicle) => (
+                                    <TableRow 
+                                        key={vehicle.id} 
+                                        className="hover:bg-muted/30 transition-colors"
+                                    >
+                                        <TableCell>
                                             <div>
-                                                <p className="font-medium">{vehicle.patente}</p>
+                                                <p className="font-semibold text-sm">{vehicle.patente}</p>
                                                 <p className="text-xs text-muted-foreground">
                                                     {vehicle.marca} {vehicle.modelo}
                                                 </p>
                                             </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <span className="text-sm">{vehicle.driver?.username || 'Sin asignar'}</span>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <span className="text-sm font-medium">{vehicle.kmRecorrido.toLocaleString()} km</span>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <span className={`text-sm font-medium ${getHealthColor(vehicle.batteryHealth)}`}>
-                                            {vehicle.batteryHealth ? `${vehicle.batteryHealth}%` : 'N/A'}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <span className={`text-sm font-medium ${getHealthColor(vehicle.engineHealth)}`}>
-                                            {vehicle.engineHealth ? `${vehicle.engineHealth}%` : 'N/A'}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <span className="text-sm font-medium">
-                                            {vehicle.fuelEfficiency ? `${vehicle.fuelEfficiency} km/l` : 'N/A'}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <Badge className={`${statusConfig[vehicle.status].className} border`}>
-                                            {statusConfig[vehicle.status].label}
-                                        </Badge>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="text-sm">{vehicle.driver?.username || '-'}</span>
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <span className="text-sm font-medium">{vehicle.kmRecorrido.toLocaleString()}</span>
+                                            <span className="text-xs text-muted-foreground ml-1">km</span>
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            {getHealthBadge(vehicle.batteryHealth)}
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            {getHealthBadge(vehicle.engineHealth)}
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <span className="text-sm font-medium">
+                                                {vehicle.fuelEfficiency ? `${vehicle.fuelEfficiency}` : '-'}
+                                            </span>
+                                            {vehicle.fuelEfficiency && (
+                                                <span className="text-xs text-muted-foreground ml-1">km/l</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <Badge className={`${statusConfig[vehicle.status].className} border font-medium`}>
+                                                {statusConfig[vehicle.status].label}
+                                            </Badge>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </CardContent>
             </Card>
         </div>

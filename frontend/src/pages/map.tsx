@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
     Select,
     SelectContent,
@@ -10,21 +9,18 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import {
-    Map as MapIcon,
+    MapIcon,
     Navigation,
-    Layers,
     Truck,
-    MapPin,
     Route,
-    Crosshair,
-    RefreshCw
+    RefreshCw,
+    Layers,
 } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { optimizeRoutes } from '@/services/ml-api';
 import type { RouteLocation } from '@/types';
 
-// Fix for default marker icons in Leaflet with webpack/vite
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -37,7 +33,6 @@ const DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Sample delivery locations in Santiago, Chile
 const sampleLocations: RouteLocation[] = [
     { lat: -33.4489, long: -70.6693 }, // Plaza de Armas
     { lat: -33.4372, long: -70.6506 }, // Providencia
@@ -49,7 +44,6 @@ const sampleLocations: RouteLocation[] = [
     { lat: -33.4915, long: -70.6581 }, // San Joaquín
 ];
 
-// Route colors for different vehicles
 const routeColors = [
     '#3b82f6', // blue
     '#ef4444', // red
@@ -71,27 +65,32 @@ export function MapPage() {
     const [routes, setRoutes] = useState<Record<string, [number, number][]>>({});
     const [loading, setLoading] = useState(false);
     const [routeLayers, setRouteLayers] = useState<L.LayerGroup | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
-    // Initialize map
     useEffect(() => {
         if (mapContainerRef.current && !mapRef.current) {
-            mapRef.current = L.map(mapContainerRef.current).setView([-33.4489, -70.6693], 12);
+            try {
+                mapRef.current = L.map(mapContainerRef.current).setView([-33.4489, -70.6693], 12);
 
-            // Add tile layer with dark/light mode support
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-                subdomains: 'abcd',
-                maxZoom: 19,
-            }).addTo(mapRef.current);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    subdomains: 'abcd',
+                    maxZoom: 19,
+                }).addTo(mapRef.current);
 
-            // Add sample location markers
-            sampleLocations.forEach((loc, index) => {
-                if (mapRef.current) {
-                    L.marker([loc.lat, loc.long])
-                        .addTo(mapRef.current)
-                        .bindPopup(`<b>Punto de entrega ${index + 1}</b><br>Lat: ${loc.lat.toFixed(4)}<br>Long: ${loc.long.toFixed(4)}`);
-                }
-            });
+                sampleLocations.forEach((loc, index) => {
+                    if (mapRef.current) {
+                        L.marker([loc.lat, loc.long])
+                            .addTo(mapRef.current)
+                            .bindPopup(`<b>Punto de entrega ${index + 1}</b><br>Lat: ${loc.lat.toFixed(4)}<br>Long: ${loc.long.toFixed(4)}`);
+                    }
+                });
+
+                setError(null);
+            } catch (err) {
+                console.error('Error initializing map:', err);
+                setError('Error al inicializar el mapa');
+            }
         }
 
         return () => {
@@ -102,9 +101,9 @@ export function MapPage() {
         };
     }, []);
 
-    // Generate optimized routes
     const handleOptimizeRoutes = async () => {
         setLoading(true);
+        setError(null);
         try {
             const result = await optimizeRoutes({
                 locations: sampleLocations,
@@ -114,7 +113,7 @@ export function MapPage() {
             drawRoutes(result.routes);
         } catch (error) {
             console.error('Error optimizing routes:', error);
-            // Generate mock routes for demo
+            setError('Error al optimizar rutas. Usando rutas de demostración.');
             const mockRoutes = generateMockRoutes(parseInt(numVehicles));
             setRoutes(mockRoutes);
             drawRoutes(mockRoutes);
@@ -123,7 +122,6 @@ export function MapPage() {
         }
     };
 
-    // Generate mock routes for demo purposes
     const generateMockRoutes = (n: number): Record<string, [number, number][]> => {
         const result: Record<string, [number, number][]> = {};
         const locationsPerVehicle = Math.ceil(sampleLocations.length / n);
@@ -133,7 +131,6 @@ export function MapPage() {
             const end = Math.min(start + locationsPerVehicle, sampleLocations.length);
             const vehicleLocations = sampleLocations.slice(start, end);
 
-            // Add depot (Plaza de Armas) at start and end
             result[i.toString()] = [
                 [sampleLocations[0].lat, sampleLocations[0].long],
                 ...vehicleLocations.map(l => [l.lat, l.long] as [number, number]),
@@ -144,11 +141,9 @@ export function MapPage() {
         return result;
     };
 
-    // Draw routes on map
     const drawRoutes = (routeData: Record<string, [number, number][]>) => {
         if (!mapRef.current) return;
 
-        // Clear existing routes
         if (routeLayers) {
             routeLayers.clearLayers();
         }
@@ -158,7 +153,7 @@ export function MapPage() {
         Object.entries(routeData).forEach(([vehicleId, coords], index) => {
             const color = routeColors[index % routeColors.length];
 
-            // Create polyline for route
+
             const polyline = L.polyline(coords, {
                 color,
                 weight: 4,
@@ -166,10 +161,8 @@ export function MapPage() {
                 dashArray: '10, 5',
             }).addTo(newLayerGroup);
 
-            // Add route markers
             coords.forEach((coord, pointIndex) => {
                 if (pointIndex === 0) {
-                    // Depot marker
                     L.circleMarker(coord, {
                         radius: 10,
                         fillColor: '#000',
@@ -180,9 +173,7 @@ export function MapPage() {
                         .addTo(newLayerGroup)
                         .bindPopup('<b>Depósito Central</b>');
                 } else if (pointIndex === coords.length - 1) {
-                    // Skip last (same as first)
                 } else {
-                    // Stop marker
                     L.circleMarker(coord, {
                         radius: 8,
                         fillColor: color,
@@ -195,7 +186,6 @@ export function MapPage() {
                 }
             });
 
-            // Fit bounds to show all routes
             if (coords.length > 0) {
                 mapRef.current?.fitBounds(polyline.getBounds().pad(0.1));
             }
@@ -204,7 +194,6 @@ export function MapPage() {
         setRouteLayers(newLayerGroup);
     };
 
-    // Clear routes
     const clearRoutes = () => {
         if (routeLayers) {
             routeLayers.clearLayers();
@@ -212,29 +201,38 @@ export function MapPage() {
         }
     };
 
-    // Center on Santiago
     const centerMap = () => {
         mapRef.current?.setView([-33.4489, -70.6693], 12);
     };
 
     return (
-        <div className="space-y-6 h-[calc(100vh-8rem)]">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                        <MapIcon className="h-8 w-8 text-emerald-500" />
-                        Mapa de Flota
-                    </h1>
-                    <p className="text-muted-foreground mt-1">
-                        Visualización y optimización de rutas en tiempo real
-                    </p>
-                </div>
+        <div className="space-y-6">
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                    <MapIcon className="h-7 w-7 text-blue-500" />
+                    Mapa de Rutas
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                    Visualiza y optimiza las rutas de tus vehículos en tiempo real
+                </p>
             </div>
 
-            {/* Controls */}
+            {error && (
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                    <div className="flex">
+                        <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                        </div>
+                        <div className="ml-3">
+                            <p className="text-sm text-yellow-700">{error}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex flex-wrap gap-4">
-                {/* View Mode */}
                 <Card className="flex-1 min-w-[280px]">
                     <CardHeader className="pb-3">
                         <CardTitle className="text-sm flex items-center gap-2">
@@ -248,32 +246,25 @@ export function MapPage() {
                                 variant={viewMode === 'vehicles' ? 'default' : 'outline'}
                                 size="sm"
                                 onClick={() => setViewMode('vehicles')}
+                                className="flex-1"
                             >
                                 <Truck className="w-4 h-4 mr-1" />
-                                Vehículos
+                                Puntos
                             </Button>
                             <Button
                                 variant={viewMode === 'routes' ? 'default' : 'outline'}
                                 size="sm"
                                 onClick={() => setViewMode('routes')}
+                                className="flex-1"
                             >
                                 <Route className="w-4 h-4 mr-1" />
                                 Rutas
-                            </Button>
-                            <Button
-                                variant={viewMode === 'heatmap' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setViewMode('heatmap')}
-                            >
-                                <MapPin className="w-4 h-4 mr-1" />
-                                Puntos
                             </Button>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Route Optimization */}
-                <Card className="flex-1 min-w-[320px]">
+                <Card className="flex-1 min-w-[280px]">
                     <CardHeader className="pb-3">
                         <CardTitle className="text-sm flex items-center gap-2">
                             <Navigation className="w-4 h-4" />
@@ -281,9 +272,9 @@ export function MapPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-0">
-                        <div className="flex gap-2 items-center">
+                        <div className="flex gap-2">
                             <Select value={numVehicles} onValueChange={setNumVehicles}>
-                                <SelectTrigger className="w-[140px]">
+                                <SelectTrigger className="flex-1">
                                     <SelectValue placeholder="Vehículos" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -296,65 +287,95 @@ export function MapPage() {
                             <Button
                                 onClick={handleOptimizeRoutes}
                                 disabled={loading}
-                                className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+                                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
                             >
                                 {loading ? (
                                     <>
                                         <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                                        Calculando...
+                                        Optimizando
                                     </>
                                 ) : (
                                     <>
-                                        <Route className="w-4 h-4 mr-2" />
+                                        <Navigation className="w-4 h-4 mr-2" />
                                         Optimizar
                                     </>
                                 )}
                             </Button>
-                            <Button variant="outline" onClick={clearRoutes}>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="flex-1 min-w-[280px]">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm flex items-center gap-2">
+                            <MapIcon className="w-4 h-4" />
+                            Acciones
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={clearRoutes}
+                                className="flex-1"
+                            >
+                                <RefreshCw className="w-4 h-4 mr-1" />
                                 Limpiar
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={centerMap}>
-                                <Crosshair className="w-4 h-4" />
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={centerMap}
+                                className="flex-1"
+                            >
+                                <Navigation className="w-4 h-4 mr-1" />
+                                Centrar
                             </Button>
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Route Legend */}
+            <Card className="overflow-hidden hover:shadow-md transition-shadow">
+                <CardContent className="p-0 h-[600px]">
+                    <div
+                        ref={mapContainerRef}
+                        className="w-full h-full"
+                        style={{ minHeight: '600px' }}
+                    />
+                </CardContent>
+            </Card>
+
             {Object.keys(routes).length > 0 && (
-                <Card>
-                    <CardContent className="py-3">
-                        <div className="flex flex-wrap gap-4 items-center">
-                            <span className="text-sm font-medium text-muted-foreground">Rutas:</span>
+                <Card className="border-t-4 border-t-blue-500">
+                    <CardContent className="py-4">
+                        <div className="flex flex-wrap gap-3 items-center">
+                            <span className="text-sm font-semibold">Rutas Optimizadas:</span>
                             {Object.keys(routes).map((vehicleId, index) => (
-                                <Badge
+                                <div
                                     key={vehicleId}
-                                    style={{ backgroundColor: routeColors[index % routeColors.length] }}
-                                    className="text-white"
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-full border"
+                                    style={{
+                                        borderColor: routeColors[index % routeColors.length],
+                                        backgroundColor: `${routeColors[index % routeColors.length]}15`
+                                    }}
                                 >
-                                    <Truck className="w-3 h-3 mr-1" />
-                                    Vehículo {parseInt(vehicleId) + 1}
-                                </Badge>
+                                    <div
+                                        className="w-3 h-3 rounded-full"
+                                        style={{ backgroundColor: routeColors[index % routeColors.length] }}
+                                    />
+                                    <Truck className="w-4 h-4" />
+                                    <span className="text-sm font-medium">Vehículo {parseInt(vehicleId) + 1}</span>
+                                </div>
                             ))}
                             <span className="text-xs text-muted-foreground ml-auto">
-                                {sampleLocations.length} puntos de entrega
+                                📍 {sampleLocations.length} puntos de entrega
                             </span>
                         </div>
                     </CardContent>
                 </Card>
             )}
-
-            {/* Map Container */}
-            <Card className="flex-1 overflow-hidden">
-                <CardContent className="p-0 h-[500px]">
-                    <div
-                        ref={mapContainerRef}
-                        className="w-full h-full"
-                        style={{ minHeight: '500px' }}
-                    />
-                </CardContent>
-            </Card>
         </div>
     );
 }

@@ -4,8 +4,8 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
-import com.innova.flota.entities.QRCode;
-import com.innova.flota.entities.Vehicle;
+import com.innova.flota.model.QRCode;
+import com.innova.flota.model.Vehicle;
 import com.innova.flota.repositories.QRCodeRepository;
 import com.innova.flota.repositories.VehicleRepository;
 import org.springframework.stereotype.Service;
@@ -34,24 +34,23 @@ public class QrGenerator {
         }
         Vehicle vehicle = vehicleOptional.get();
 
-        // save qr first to get its Id
+        // guardar QR antes de generar la imagen
         QRCode qrCode = new QRCode();
         qrCodeRepository.save(qrCode);
 
-        // Construct the JSON logic
+        // construccion logica del QR
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode jsonNode = mapper.valueToTree(vehicle);
 
         jsonNode.put("id_qr", String.valueOf(qrCode.getId()));
 
-        // add qrcode's id into the json
+        // añadir QR id al JSON
         if (jsonNode.has("id")) {
             jsonNode.put("id_vehicle", jsonNode.get("id").asText());
             jsonNode.remove("id");
         }
 
         jsonNode.remove("driver");
-        // it used to work without removing these... what happened? ;_;
         jsonNode.remove("fuelEfficiency");
         jsonNode.remove("batteryHealth");
         jsonNode.remove("engineHealth");

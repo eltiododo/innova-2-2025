@@ -1,6 +1,6 @@
 package com.innova.flota.repositories;
 
-import com.innova.flota.entities.Users;
+import com.innova.flota.model.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

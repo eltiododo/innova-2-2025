@@ -1,6 +1,6 @@
 package com.innova.flota.services;
 
-import com.innova.flota.entities.Users;
+import com.innova.flota.model.Users;
 import com.innova.flota.repositories.UsersRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,7 +17,7 @@ public class AuthService {
     public record AuthPayload(String token, Users user) {
     }
 
-    public record RegisterInput(String username, String email, String password, String phone, Users.Roles role) {
+    public record RegisterInput(String username, String email, String password, String phone, Users.Role role) {
     }
 
     public record LoginInput(String email, String password) {

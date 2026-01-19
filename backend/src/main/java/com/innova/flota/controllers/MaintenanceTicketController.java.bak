@@ -1,8 +1,8 @@
 package com.innova.flota.controllers;
 
-import com.innova.flota.entities.MaintenanceTicket;
-import com.innova.flota.entities.Vehicle;
-import com.innova.flota.entities.Workshop;
+import com.innova.flota.model.MaintenanceTicket;
+import com.innova.flota.model.Vehicle;
+import com.innova.flota.model.Workshop;
 import com.innova.flota.repositories.MaintenanceTicketRepository;
 import com.innova.flota.repositories.VehicleRepository;
 import com.innova.flota.repositories.WorkshopRepository;

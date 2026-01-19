@@ -1,8 +1,8 @@
 package com.innova.flota.services;
 
-import com.innova.flota.entities.MaintenanceTicket;
-import com.innova.flota.entities.QRCode;
-import com.innova.flota.entities.Vehicle;
+import com.innova.flota.model.MaintenanceTicket;
+import com.innova.flota.model.QRCode;
+import com.innova.flota.model.Vehicle;
 import com.innova.flota.repositories.MaintenanceTicketRepository;
 import com.innova.flota.repositories.QRCodeRepository;
 import com.innova.flota.repositories.VehicleRepository;

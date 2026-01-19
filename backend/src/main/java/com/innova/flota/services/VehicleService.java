@@ -1,7 +1,7 @@
 package com.innova.flota.services;
 
-import com.innova.flota.entities.Users;
-import com.innova.flota.entities.Vehicle;
+import com.innova.flota.model.Users;
+import com.innova.flota.model.Vehicle;
 import com.innova.flota.repositories.UsersRepository;
 import com.innova.flota.repositories.VehicleRepository;
 import lombok.AllArgsConstructor;
@@ -17,9 +17,7 @@ public class VehicleService {
     private final UsersRepository usersRepository;
 
     public Vehicle registerVehicle(Vehicle vehicle) {
-        // Check if vehicle with same license plate (patente) already exists?
-        // Assuming unique constraint on DB or handled here.
-        // For now, simple save.
+
         return vehicleRepository.save(vehicle);
     }
 

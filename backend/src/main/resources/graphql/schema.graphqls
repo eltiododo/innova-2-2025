@@ -13,6 +13,7 @@ type Query {
     maintenanceTicketById(id: ID!): MaintenanceTicket
     # Authentication
     me: Users
+    dashboardStats: DashboardStats!
 }
 
 type Mutation {
@@ -155,4 +156,28 @@ type MaintenanceTicket {
     millaje: Int
     notasExtra: String
     createdAt: String
+}
+
+type DashboardStats {
+    totalVehicles: Int!
+    avgFuelEfficiency: Float!
+    avgTripTime: Int!
+    vehiclesInMaintenance: Int!
+    fuelEfficiencyLast6Months: [ChartDataPoint!]!
+    avgTripTimeLastWeek: [ChartDataPoint!]!
+    maintenanceLast4Weeks: [ChartDataPoint!]!
+}
+
+type ChartDataPoint {
+    month: String
+    day: String
+    week: String
+    value: Float!
+}
+
+type FleetHealthDistribution {
+    excellent: Int!
+    good: Int!
+    fair: Int!
+    poor: Int!
 }

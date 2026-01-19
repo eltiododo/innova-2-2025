@@ -46,6 +46,8 @@ services:
       DB_USER: postgres
       DB_PASSWORD: postgres
       ML_API_URL: http://innova-ml-api:8000/predict
+      EMAIL_USERNAME: ${EMAIL_USERNAME:-your-email@gmail.com}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-your-app-password}
     depends_on:
       postgres:
         condition: service_healthy

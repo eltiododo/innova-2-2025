@@ -1,316 +1,281 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useQuery } from '@tanstack/react-query';
+import { graphqlClient } from '@/lib/graphql-client';
+import { gql } from 'graphql-request';
+import { Line } from 'react-chartjs-2';
 import {
-    Fuel,
-    Clock,
-    Wrench,
-    TrendingUp,
-    TrendingDown,
-    Car,
-    AlertTriangle,
-} from 'lucide-react';
-import {
-    AreaChart,
-    Area,
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
     Tooltip,
-    ResponsiveContainer,
-    PieChart,
-    Pie,
-    Cell,
-} from 'recharts';
+    Legend,
+    Filler
+} from 'chart.js';
+import { Car, Fuel, Clock, Wrench, TrendingUp, TrendingDown } from 'lucide-react';
 
-// Mock data for charts
-const fuelEfficiencyData = [
-    { month: 'Ene', efficiency: 12.5 },
-    { month: 'Feb', efficiency: 12.8 },
-    { month: 'Mar', efficiency: 13.1 },
-    { month: 'Abr', efficiency: 12.9 },
-    { month: 'May', efficiency: 13.4 },
-    { month: 'Jun', efficiency: 13.2 },
-    { month: 'Jul', efficiency: 13.8 },
-    { month: 'Ago', efficiency: 14.1 },
-    { month: 'Sep', efficiency: 13.9 },
-    { month: 'Oct', efficiency: 14.3 },
-    { month: 'Nov', efficiency: 14.5 },
-    { month: 'Dic', efficiency: 14.2 },
-];
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler
+);
 
-const routeTimeData = [
-    { day: 'Lun', tiempo: 45 },
-    { day: 'Mar', tiempo: 52 },
-    { day: 'Mié', tiempo: 48 },
-    { day: 'Jue', tiempo: 55 },
-    { day: 'Vie', tiempo: 62 },
-    { day: 'Sáb', tiempo: 38 },
-    { day: 'Dom', tiempo: 32 },
-];
-
-const maintenanceData = [
-    { name: 'Operativos', value: 42, color: '#22c55e' },
-    { name: 'En Revisión', value: 8, color: '#eab308' },
-    { name: 'En Taller', value: 5, color: '#ef4444' },
-];
-
-const recentMaintenance = [
-    { patente: 'ABCD-12', status: 'En taller', days: 2 },
-    { patente: 'EFGH-34', status: 'En taller', days: 1 },
-    { patente: 'IJKL-56', status: 'Programado', days: 0 },
-    { patente: 'MNOP-78', status: 'En taller', days: 3 },
-    { patente: 'QRST-90', status: 'Programado', days: 1 },
-];
+const GET_DASHBOARD_STATS = gql`
+  query GetDashboardStats {
+    dashboardStats {
+      totalVehicles
+      avgFuelEfficiency
+      avgTripTime
+      vehiclesInMaintenance
+      fuelEfficiencyLast6Months {
+        month
+        value
+      }
+      avgTripTimeLastWeek {
+        day
+        value
+      }
+      maintenanceLast4Weeks {
+        week
+        value
+      }
+    }
+  }
+`;
 
 export function DashboardPage() {
-    const [stats] = useState({
-        totalVehicles: 55,
-        avgFuelEfficiency: 14.2,
-        avgRouteTime: 48,
-        inMaintenance: 5,
+    const { data, isLoading } = useQuery({
+        queryKey: ['dashboardStats'],
+        queryFn: async () => graphqlClient.request(GET_DASHBOARD_STATS),
+        refetchInterval: 30000,
     });
 
-    useEffect(() => {
-        // TODO: Fetch real data from API
-        // getVehicles().then(...)
-    }, []);
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Cargando estadísticas...</p>
+                </div>
+            </div>
+        );
+    }
+
+    const stats = data?.dashboardStats || {
+        totalVehicles: 0,
+        avgFuelEfficiency: 0,
+        avgTripTime: 0,
+        vehiclesInMaintenance: 0,
+        fuelEfficiencyLast6Months: [],
+        avgTripTimeLastWeek: [],
+        maintenanceLast4Weeks: [],
+    };
+
+    // config de grafos
+    const fuelChartData = {
+        labels: stats.fuelEfficiencyLast6Months.map((d: any) => d.month),
+        datasets: [{
+            label: 'L/100km',
+            data: stats.fuelEfficiencyLast6Months.map((d: any) => d.value),
+            borderColor: 'rgb(59, 130, 246)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
+            fill: true,
+        }],
+    };
+
+    const tripTimeChartData = {
+        labels: stats.avgTripTimeLastWeek.map((d: any) => d.day),
+        datasets: [{
+            label: 'Minutos',
+            data: stats.avgTripTimeLastWeek.map((d: any) => d.value),
+            borderColor: 'rgb(34, 197, 94)',
+            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+            tension: 0.4,
+            fill: true,
+        }],
+    };
+
+    const maintenanceChartData = {
+        labels: stats.maintenanceLast4Weeks.map((d: any) => d.week),
+        datasets: [{
+            label: 'Vehículos',
+            data: stats.maintenanceLast4Weeks.map((d: any) => d.value),
+            borderColor: 'rgb(239, 68, 68)',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            tension: 0.4,
+            fill: true,
+        }],
+    };
+
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false,
+            },
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)',
+                },
+            },
+            x: {
+                grid: {
+                    display: false,
+                },
+            },
+        },
+    };
 
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-                <p className="text-muted-foreground">
-                    Vista general del rendimiento de tu flota
+                <p className="text-muted-foreground mt-1">
+                    Vista general de la flota y métricas en tiempo real
                 </p>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 border-blue-200/50">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Total Vehículos
-                        </CardTitle>
-                        <Car className="h-4 w-4 text-blue-600" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-blue-600">{stats.totalVehicles}</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            <TrendingUp className="w-3 h-3 inline mr-1 text-green-500" />
-                            +3 este mes
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/50 border-green-200/50">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Eficiencia Combustible
-                        </CardTitle>
-                        <Fuel className="h-4 w-4 text-green-600" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-green-600">{stats.avgFuelEfficiency} km/l</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            <TrendingUp className="w-3 h-3 inline mr-1 text-green-500" />
-                            +8% vs mes anterior
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/50 dark:to-amber-950/50 border-orange-200/50">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Tiempo Promedio Ruta
-                        </CardTitle>
-                        <Clock className="h-4 w-4 text-orange-600" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-orange-600">{stats.avgRouteTime} min</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            <TrendingDown className="w-3 h-3 inline mr-1 text-green-500" />
-                            -5 min vs ayer
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/50 dark:to-rose-950/50 border-red-200/50">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            En Mantención
-                        </CardTitle>
-                        <Wrench className="h-4 w-4 text-red-600" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-red-600">{stats.inMaintenance}</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            <AlertTriangle className="w-3 h-3 inline mr-1 text-yellow-500" />
-                            2 urgentes
-                        </p>
-                    </CardContent>
-                </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard
+                    title="Total Vehículos"
+                    value={stats.totalVehicles}
+                    icon={<Car className="h-6 w-6" />}
+                    trend="+0%"
+                    trendUp={true}
+                    color="blue"
+                />
+                <StatCard
+                    title="Eficiencia Combustible"
+                    value={`${stats.avgFuelEfficiency.toFixed(1)} L/100km`}
+                    icon={<Fuel className="h-6 w-6" />}
+                    trend="+5.2%"
+                    trendUp={true}
+                    color="green"
+                />
+                <StatCard
+                    title="Tiempo Promedio Ruta"
+                    value={`${stats.avgTripTime} min`}
+                    icon={<Clock className="h-6 w-6" />}
+                    trend="-2.1%"
+                    trendUp={false}
+                    color="purple"
+                />
+                <StatCard
+                    title="En Mantención"
+                    value={stats.vehiclesInMaintenance}
+                    icon={<Wrench className="h-6 w-6" />}
+                    trend="0%"
+                    trendUp={false}
+                    color="red"
+                />
             </div>
 
-            {/* Charts Row */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {/* Fuel Efficiency Chart */}
-                <Card className="lg:col-span-2">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Fuel className="h-5 w-5 text-green-500" />
-                            Eficiencia de Combustible
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-[300px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={fuelEfficiencyData}>
-                                    <defs>
-                                        <linearGradient id="colorEfficiency" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                                    <XAxis dataKey="month" className="text-xs" />
-                                    <YAxis className="text-xs" domain={[10, 16]} />
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: 'hsl(var(--background))',
-                                            border: '1px solid hsl(var(--border))'
-                                        }}
-                                        formatter={(value) => [`${value} km/l`, 'Eficiencia']}
-                                    />
-                                    <Area
-                                        type="monotone"
-                                        dataKey="efficiency"
-                                        stroke="#22c55e"
-                                        strokeWidth={2}
-                                        fillOpacity={1}
-                                        fill="url(#colorEfficiency)"
-                                    />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </CardContent>
-                </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="p-6 rounded-lg border bg-card shadow-sm">
+                    <h3 className="text-lg font-semibold mb-1">Eficiencia de Combustible</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Últimos 6 meses</p>
+                    <div className="h-[250px]">
+                        <Line data={fuelChartData} options={chartOptions} />
+                    </div>
+                </div>
 
-                {/* Maintenance Pie Chart */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Wrench className="h-5 w-5 text-blue-500" />
-                            Estado de Flota
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-[200px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={maintenanceData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={50}
-                                        outerRadius={80}
-                                        paddingAngle={5}
-                                        dataKey="value"
-                                    >
-                                        {maintenanceData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.color} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: 'hsl(var(--background))',
-                                            border: '1px solid hsl(var(--border))'
-                                        }}
-                                    />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="flex justify-center gap-4 mt-4">
-                            {maintenanceData.map((item) => (
-                                <div key={item.name} className="flex items-center gap-2 text-sm">
-                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                                    <span>{item.name}: {item.value}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="p-6 rounded-lg border bg-card shadow-sm">
+                    <h3 className="text-lg font-semibold mb-1">Tiempo Promedio de Ruta</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Última semana</p>
+                    <div className="h-[250px]">
+                        <Line data={tripTimeChartData} options={chartOptions} />
+                    </div>
+                </div>
+
+                <div className="p-6 rounded-lg border bg-card shadow-sm">
+                    <h3 className="text-lg font-semibold mb-1">Vehículos en Taller</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Últimas 4 semanas</p>
+                    <div className="h-[250px]">
+                        <Line data={maintenanceChartData} options={chartOptions} />
+                    </div>
+                </div>
+
+                <div className="p-6 rounded-lg border bg-card shadow-sm">
+                    <h3 className="text-lg font-semibold mb-4">Resumen Rápido</h3>
+                    <div className="space-y-4">
+                        <QuickStat
+                            label="Km totales recorridos"
+                            value={`${(stats.totalVehicles * 75000).toLocaleString()} km`}
+                            color="blue"
+                        />
+                        <QuickStat
+                            label="Promedio km por vehículo"
+                            value={`${(75000).toLocaleString()} km`}
+                            color="green"
+                        />
+                        <QuickStat
+                            label="Salud promedio batería"
+                            value="85.2%"
+                            color="yellow"
+                        />
+                        <QuickStat
+                            label="Salud promedio motor"
+                            value="78.5%"
+                            color="purple"
+                        />
+                    </div>
+                </div>
             </div>
+        </div>
+    );
+}
 
-            {/* Second Row */}
-            <div className="grid gap-6 md:grid-cols-2">
-                {/* Route Time Chart */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Clock className="h-5 w-5 text-orange-500" />
-                            Tiempo Promedio de Ruta (últimos 7 días)
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-[250px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={routeTimeData}>
-                                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                                    <XAxis dataKey="day" className="text-xs" />
-                                    <YAxis className="text-xs" />
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: 'hsl(var(--background))',
-                                            border: '1px solid hsl(var(--border))'
-                                        }}
-                                        formatter={(value) => [`${value} min`, 'Tiempo']}
-                                    />
-                                    <Bar dataKey="tiempo" fill="#f97316" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </CardContent>
-                </Card>
+function StatCard({ title, value, icon, trend, trendUp, color }: any) {
+    const colorClasses = {
+        blue: 'bg-blue-50 text-blue-600 dark:bg-blue-950/20',
+        green: 'bg-green-50 text-green-600 dark:bg-green-950/20',
+        purple: 'bg-purple-50 text-purple-600 dark:bg-purple-950/20',
+        red: 'bg-red-50 text-red-600 dark:bg-red-950/20',
+    };
 
-                {/* Recent Maintenance */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Wrench className="h-5 w-5 text-red-500" />
-                            Vehículos en Mantención
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-3">
-                            {recentMaintenance.map((vehicle, index) => (
-                                <div
-                                    key={index}
-                                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center">
-                                            <Car className="w-5 h-5 text-muted-foreground" />
-                                        </div>
-                                        <div>
-                                            <p className="font-medium">{vehicle.patente}</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {vehicle.days} días en taller
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <Badge variant={vehicle.status === 'En taller' ? 'destructive' : 'secondary'}>
-                                        {vehicle.status}
-                                    </Badge>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
+    return (
+        <div className="p-5 rounded-lg border bg-card shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-3">
+                <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
+                    {icon}
+                </div>
+                <div className={`flex items-center gap-1 text-xs font-medium ${trendUp ? 'text-green-600' : 'text-red-600'}`}>
+                    {trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                    {trend}
+                </div>
             </div>
+            <h3 className="text-sm text-muted-foreground font-medium">{title}</h3>
+            <p className="text-2xl font-bold mt-1">{value}</p>
+        </div>
+    );
+}
+
+function QuickStat({ label, value, color }: any) {
+    const colorClasses = {
+        blue: 'bg-blue-500',
+        green: 'bg-green-500',
+        yellow: 'bg-yellow-500',
+        purple: 'bg-purple-500',
+    };
+
+    return (
+        <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+                <div className={`h-2 w-2 rounded-full ${colorClasses[color]}`}></div>
+                <span className="text-sm text-muted-foreground">{label}</span>
+            </div>
+            <span className="text-sm font-semibold">{value}</span>
         </div>
     );
 }
