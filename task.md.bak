@@ -1,0 +1,25 @@
+# Frontend Scaffold Task
+
+## Setup
+- [ ] Create Vite + React + TypeScript project
+- [ ] Configure shadcn/ui with Tailwind CSS
+- [ ] Install graphql-request and configure client
+
+## Core Structure
+- [ ] Setup routing with React Router
+- [ ] Create layout component with sidebar navigation
+- [ ] Configure GraphQL client service layer
+
+## Pages & Views
+- [ ] Login page (placeholder)
+- [ ] Dashboard (grafos de eficiencia de combustible, tiempo promedio de ruta, vehículos en taller)
+- [ ] Fleet - Vehicle cards with photos, detail modal, email QR sender, action dropdown
+- [ ] Reports/Status - Vehicle list with color-coded statuses
+- [ ] Map page (placeholder)
+
+## Services
+- [ ] GraphQL service for vehicles (concordante con VehicleController)
+- [ ] GraphQL service for travel logs (concordante con TravelLogController)
+- [ ] GraphQL service for maintenance tickets (concordante con MaintenanceTicketController)
+- [ ] REST service for ML predictions (Python vehicle-telemetry-scikit)
+- [ ] REST service for QR codes
