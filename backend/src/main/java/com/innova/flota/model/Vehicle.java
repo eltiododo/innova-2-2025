@@ -23,12 +23,15 @@ public class Vehicle {
     private Double engineHealth;
     private Double odometerReading;
 
+    @Enumerated(EnumType.STRING)
+    private VehicleStatus status = VehicleStatus.OPERATIONAL;
+
     // constructor
     public Vehicle() {
     }
 
     public Vehicle(Long id, String patente, String marca, String modelo, int kmRecorrido, Integer year,
-                   Users driver, Double fuelEfficiency, Double batteryHealth, Double engineHealth, Double odometerReading) {
+            Users driver, Double fuelEfficiency, Double batteryHealth, Double engineHealth, Double odometerReading) {
         this.id = id;
         this.patente = patente;
         this.marca = marca;
@@ -129,5 +132,13 @@ public class Vehicle {
 
     public void setOdometerReading(Double odometerReading) {
         this.odometerReading = odometerReading;
+    }
+
+    public VehicleStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(VehicleStatus status) {
+        this.status = status;
     }
 }

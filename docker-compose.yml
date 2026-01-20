@@ -56,6 +56,24 @@ services:
     networks:
       - innova-network
 
+  # 4. React Frontend (Vite)
+  frontend:
+    container_name: innova-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_GRAPHQL_ENDPOINT=http://localhost:8080/graphql
+    volumes:
+      - ./frontend/src:/app/src # Hot reload for dev
+      - ./frontend/public:/app/public
+    depends_on:
+      - backend
+    networks:
+      - innova-network
+
 volumes:
   postgres-data:
 

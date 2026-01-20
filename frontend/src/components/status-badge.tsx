@@ -7,15 +7,15 @@ interface StatusBadgeProps {
 }
 
 const statusConfig: Record<VehicleStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-    operational: {
+    OPERATIONAL: {
         label: 'Operativo',
         variant: 'default',
     },
-    pending_review: {
+    PENDING_REVIEW: {
         label: 'Revisión Pendiente',
         variant: 'secondary',
     },
-    in_maintenance: {
+    IN_MAINTENANCE: {
         label: 'En Mantención',
         variant: 'destructive',
     },

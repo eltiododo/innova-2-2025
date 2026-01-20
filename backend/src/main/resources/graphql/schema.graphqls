@@ -4,6 +4,12 @@ enum Role {
     DRIVER
 }
 
+enum VehicleStatus {
+    OPERATIONAL
+    PENDING_REVIEW
+    IN_MAINTENANCE
+}
+
 type Query {
     vehicles: [Vehicle]
     vehicleById(id: ID!): Vehicle
@@ -125,6 +131,7 @@ type Vehicle {
     batteryHealth: Float
     engineHealth: Float
     odometerReading: Float
+    status: VehicleStatus!
     driver: Users!
 }
 

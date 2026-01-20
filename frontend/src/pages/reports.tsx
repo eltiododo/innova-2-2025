@@ -21,20 +21,20 @@ import { FileText, Search, Battery, Wrench, Gauge } from 'lucide-react';
 import type { VehicleWithStatus, VehicleStatus } from '@/types';
 
 const mockVehicles: VehicleWithStatus[] = [
-    { id: '1', patente: 'ABCD-12', marca: 'Toyota', modelo: 'Hilux', kmRecorrido: 45000, year: 2022, batteryHealth: 95, engineHealth: 88, fuelEfficiency: 12.5, driver: { id: '1', username: 'Juan Pérez', email: '', phone: '', role: 'DRIVER' }, status: 'operational' },
-    { id: '2', patente: 'EFGH-34', marca: 'Ford', modelo: 'Ranger', kmRecorrido: 62000, year: 2021, batteryHealth: 82, engineHealth: 75, fuelEfficiency: 11.8, driver: { id: '2', username: 'María García', email: '', phone: '', role: 'DRIVER' }, status: 'pending_review' },
-    { id: '3', patente: 'IJKL-56', marca: 'Chevrolet', modelo: 'D-Max', kmRecorrido: 78000, year: 2020, batteryHealth: 65, engineHealth: 60, fuelEfficiency: 10.2, driver: { id: '3', username: 'Carlos López', email: '', phone: '', role: 'DRIVER' }, status: 'in_maintenance' },
-    { id: '4', patente: 'MNOP-78', marca: 'Nissan', modelo: 'Navara', kmRecorrido: 35000, year: 2023, batteryHealth: 98, engineHealth: 95, fuelEfficiency: 13.5, driver: { id: '4', username: 'Ana Martínez', email: '', phone: '', role: 'DRIVER' }, status: 'operational' },
-    { id: '5', patente: 'QRST-90', marca: 'Mitsubishi', modelo: 'L200', kmRecorrido: 52000, year: 2021, batteryHealth: 88, engineHealth: 82, fuelEfficiency: 11.2, driver: { id: '5', username: 'Pedro Sánchez', email: '', phone: '', role: 'DRIVER' }, status: 'operational' },
-    { id: '6', patente: 'UVWX-11', marca: 'Isuzu', modelo: 'D-Max', kmRecorrido: 41000, year: 2022, batteryHealth: 92, engineHealth: 90, fuelEfficiency: 12.8, driver: { id: '6', username: 'Laura Torres', email: '', phone: '', role: 'DRIVER' }, status: 'pending_review' },
-    { id: '7', patente: 'YZAB-22', marca: 'Toyota', modelo: 'Tacoma', kmRecorrido: 28000, year: 2023, batteryHealth: 99, engineHealth: 97, fuelEfficiency: 14.1, driver: { id: '7', username: 'Diego Ruiz', email: '', phone: '', role: 'DRIVER' }, status: 'operational' },
-    { id: '8', patente: 'CDEF-33', marca: 'Ford', modelo: 'F-150', kmRecorrido: 95000, year: 2019, batteryHealth: 55, engineHealth: 50, fuelEfficiency: 9.5, driver: { id: '8', username: 'Sofía Morales', email: '', phone: '', role: 'DRIVER' }, status: 'in_maintenance' },
+    { id: '1', patente: 'ABCD-12', marca: 'Toyota', modelo: 'Hilux', kmRecorrido: 45000, year: 2022, batteryHealth: 95, engineHealth: 88, fuelEfficiency: 12.5, driver: { id: '1', username: 'Juan Pérez', email: '', phone: '', role: 'DRIVER' }, status: 'OPERATIONAL' },
+    { id: '2', patente: 'EFGH-34', marca: 'Ford', modelo: 'Ranger', kmRecorrido: 62000, year: 2021, batteryHealth: 82, engineHealth: 75, fuelEfficiency: 11.8, driver: { id: '2', username: 'María García', email: '', phone: '', role: 'DRIVER' }, status: 'PENDING_REVIEW' },
+    { id: '3', patente: 'IJKL-56', marca: 'Chevrolet', modelo: 'D-Max', kmRecorrido: 78000, year: 2020, batteryHealth: 65, engineHealth: 60, fuelEfficiency: 10.2, driver: { id: '3', username: 'Carlos López', email: '', phone: '', role: 'DRIVER' }, status: 'IN_MAINTENANCE' },
+    { id: '4', patente: 'MNOP-78', marca: 'Nissan', modelo: 'Navara', kmRecorrido: 35000, year: 2023, batteryHealth: 98, engineHealth: 95, fuelEfficiency: 13.5, driver: { id: '4', username: 'Ana Martínez', email: '', phone: '', role: 'DRIVER' }, status: 'OPERATIONAL' },
+    { id: '5', patente: 'QRST-90', marca: 'Mitsubishi', modelo: 'L200', kmRecorrido: 52000, year: 2021, batteryHealth: 88, engineHealth: 82, fuelEfficiency: 11.2, driver: { id: '5', username: 'Pedro Sánchez', email: '', phone: '', role: 'DRIVER' }, status: 'OPERATIONAL' },
+    { id: '6', patente: 'UVWX-11', marca: 'Isuzu', modelo: 'D-Max', kmRecorrido: 41000, year: 2022, batteryHealth: 92, engineHealth: 90, fuelEfficiency: 12.8, driver: { id: '6', username: 'Laura Torres', email: '', phone: '', role: 'DRIVER' }, status: 'PENDING_REVIEW' },
+    { id: '7', patente: 'YZAB-22', marca: 'Toyota', modelo: 'Tacoma', kmRecorrido: 28000, year: 2023, batteryHealth: 99, engineHealth: 97, fuelEfficiency: 14.1, driver: { id: '7', username: 'Diego Ruiz', email: '', phone: '', role: 'DRIVER' }, status: 'OPERATIONAL' },
+    { id: '8', patente: 'CDEF-33', marca: 'Ford', modelo: 'F-150', kmRecorrido: 95000, year: 2019, batteryHealth: 55, engineHealth: 50, fuelEfficiency: 9.5, driver: { id: '8', username: 'Sofía Morales', email: '', phone: '', role: 'DRIVER' }, status: 'IN_MAINTENANCE' },
 ];
 
 const statusConfig: Record<VehicleStatus, { label: string; className: string }> = {
-    operational: { label: 'Operativo', className: 'bg-green-100 text-green-800 border-green-200' },
-    pending_review: { label: 'Revisión Pendiente', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-    in_maintenance: { label: 'En Mantención', className: 'bg-red-100 text-red-800 border-red-200' },
+    OPERATIONAL: { label: 'Operativo', className: 'bg-green-100 text-green-800 border-green-200' },
+    PENDING_REVIEW: { label: 'Revisión Pendiente', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    IN_MAINTENANCE: { label: 'En Mantención', className: 'bg-red-100 text-red-800 border-red-200' },
 };
 
 function getHealthColor(health: number | undefined) {
@@ -77,9 +77,9 @@ export function ReportsPage() {
     }, [vehicles, searchTerm, statusFilter]);
 
     const stats = {
-        operational: vehicles.filter((v) => v.status === 'operational').length,
-        pending: vehicles.filter((v) => v.status === 'pending_review').length,
-        maintenance: vehicles.filter((v) => v.status === 'in_maintenance').length,
+        operational: vehicles.filter((v) => v.status === 'OPERATIONAL').length,
+        pending: vehicles.filter((v) => v.status === 'PENDING_REVIEW').length,
+        maintenance: vehicles.filter((v) => v.status === 'IN_MAINTENANCE').length,
     };
 
     return (
@@ -145,9 +145,9 @@ export function ReportsPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Todos los estados</SelectItem>
-                        <SelectItem value="operational">Operativo</SelectItem>
-                        <SelectItem value="pending_review">Revisión Pendiente</SelectItem>
-                        <SelectItem value="in_maintenance">En Mantención</SelectItem>
+                        <SelectItem value="OPERATIONAL">Operativo</SelectItem>
+                        <SelectItem value="PENDING_REVIEW">Revisión Pendiente</SelectItem>
+                        <SelectItem value="IN_MAINTENANCE">En Mantención</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
@@ -190,8 +190,8 @@ export function ReportsPage() {
                             </TableHeader>
                             <TableBody>
                                 {filteredVehicles.map((vehicle) => (
-                                    <TableRow 
-                                        key={vehicle.id} 
+                                    <TableRow
+                                        key={vehicle.id}
                                         className="hover:bg-muted/30 transition-colors"
                                     >
                                         <TableCell>

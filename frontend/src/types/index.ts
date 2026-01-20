@@ -42,7 +42,7 @@ export interface MaintenancePredictionResponse {
     predicted_failure_days?: number;
 }
 
-export type VehicleStatus = 'operational' | 'pending_review' | 'in_maintenance';
+export type VehicleStatus = 'OPERATIONAL' | 'PENDING_REVIEW' | 'IN_MAINTENANCE';
 
 export interface MaintenanceTicket {
     id: string;

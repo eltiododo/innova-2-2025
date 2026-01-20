@@ -28,6 +28,7 @@ const GET_VEHICLES = gql`
       fuelEfficiency
       batteryHealth
       engineHealth
+      status
       driver {
         id
         username
@@ -36,24 +37,14 @@ const GET_VEHICLES = gql`
   }
 `;
 
-function mapBackendStatus(backendStatus: string): VehicleStatus {
-    const statusMap: Record<string, VehicleStatus> = {
-        'ACTIVE': 'operational',
-        'INACTIVE': 'pending_review',
-        'MAINTENANCE': 'in_maintenance',
-        'active': 'operational',
-        'inactive': 'pending_review',
-        'maintenance': 'in_maintenance',
-    };
-    return statusMap[backendStatus] || 'operational';
-}
+
 
 export function FleetPage() {
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ['vehicles'],
         queryFn: async () => graphqlClient.request(GET_VEHICLES),
     });
-    
+
     const [vehicles, setVehicles] = useState<VehicleWithStatus[]>([]);
     const [filteredVehicles, setFilteredVehicles] = useState<VehicleWithStatus[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -73,7 +64,7 @@ export function FleetPage() {
                 fuelEfficiency: v.fuelEfficiency,
                 batteryHealth: v.batteryHealth,
                 engineHealth: v.engineHealth,
-                status: mapBackendStatus(v.status),
+                status: v.status,
                 driver: v.driver,
             }));
             setVehicles(mappedVehicles);
@@ -107,9 +98,9 @@ export function FleetPage() {
 
     const stats = {
         total: vehicles.length,
-        operational: vehicles.filter(v => v.status === 'operational').length,
-        pending: vehicles.filter(v => v.status === 'pending_review').length,
-        maintenance: vehicles.filter(v => v.status === 'in_maintenance').length,
+        operational: vehicles.filter(v => v.status === 'OPERATIONAL').length,
+        pending: vehicles.filter(v => v.status === 'PENDING_REVIEW').length,
+        maintenance: vehicles.filter(v => v.status === 'IN_MAINTENANCE').length,
     };
 
     if (isLoading) {
@@ -129,7 +120,7 @@ export function FleetPage() {
                 <div className="text-center p-6 border-2 border-dashed rounded-lg">
                     <p className="text-red-500 mb-2 font-semibold">Error al cargar vehículos</p>
                     <p className="text-sm text-muted-foreground mb-4">{error.message}</p>
-                    <button 
+                    <button
                         onClick={() => refetch()}
                         className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
                     >
@@ -187,9 +178,9 @@ export function FleetPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Todos los estados</SelectItem>
-                        <SelectItem value="operational">✅ Operativo</SelectItem>
-                        <SelectItem value="pending_review">⚠️ Revisión Pendiente</SelectItem>
-                        <SelectItem value="in_maintenance">🔧 En Mantención</SelectItem>
+                        <SelectItem value="OPERATIONAL">✅ Operativo</SelectItem>
+                        <SelectItem value="PENDING_REVIEW">⚠️ Revisión Pendiente</SelectItem>
+                        <SelectItem value="IN_MAINTENANCE">🔧 En Mantención</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
