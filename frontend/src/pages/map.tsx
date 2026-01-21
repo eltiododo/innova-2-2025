@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     MapIcon,
     Navigation,
@@ -16,6 +17,10 @@ import {
     Route,
     RefreshCw,
     Layers,
+    Eye,
+    EyeOff,
+    ChevronRight,
+    MapPin,
 } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -82,6 +87,9 @@ export function MapPage() {
     const [loading, setLoading] = useState(false);
     const [routeLayers, setRouteLayers] = useState<L.LayerGroup | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [visibleVehicles, setVisibleVehicles] = useState<Set<string>>(new Set());
+    // Track how many points are visible per vehicle (1-indexed, excludes depot and return)
+    const [visiblePointsPerVehicle, setVisiblePointsPerVehicle] = useState<Record<string, number>>({});
     const { data: travelLogs = [], isLoading: travelLoading } = useQuery({
         queryKey: ['travelLogs'],
         queryFn: getTravelLogs,
@@ -195,14 +203,34 @@ export function MapPage() {
                 locations: routeLocations,
                 n_vehicles: parseInt(numVehicles),
             });
+            // Initialize all vehicles as visible with first 2 points
+            const allVehicleIds = new Set(Object.keys(result.routes));
+            setVisibleVehicles(allVehicleIds);
+            // Default: show first 2 stops per vehicle
+            const defaultVisiblePoints: Record<string, number> = {};
+            Object.keys(result.routes).forEach(vehicleId => {
+                const stopCount = result.routes[vehicleId].length - 2; // Exclude depot and return
+                defaultVisiblePoints[vehicleId] = Math.min(2, stopCount);
+            });
+            setVisiblePointsPerVehicle(defaultVisiblePoints);
             setRoutes(result.routes);
-            drawRoutes(result.routes);
+            drawRoutes(result.routes, allVehicleIds, defaultVisiblePoints);
         } catch (error) {
             console.error('Error optimizing routes:', error);
             setError('Error al optimizar rutas. Usando rutas de demostración.');
             const mockRoutes = generateMockRoutes(parseInt(numVehicles), routeLocations);
+            // Initialize all vehicles as visible with first 2 points
+            const allVehicleIds = new Set(Object.keys(mockRoutes));
+            setVisibleVehicles(allVehicleIds);
+            // Default: show first 2 stops per vehicle
+            const defaultVisiblePoints: Record<string, number> = {};
+            Object.keys(mockRoutes).forEach(vehicleId => {
+                const stopCount = mockRoutes[vehicleId].length - 2;
+                defaultVisiblePoints[vehicleId] = Math.min(2, stopCount);
+            });
+            setVisiblePointsPerVehicle(defaultVisiblePoints);
             setRoutes(mockRoutes);
-            drawRoutes(mockRoutes);
+            drawRoutes(mockRoutes, allVehicleIds, defaultVisiblePoints);
         } finally {
             setLoading(false);
         }
@@ -228,7 +256,7 @@ export function MapPage() {
         return result;
     };
 
-    const drawRoutes = (routeData: Record<string, [number, number][]>) => {
+    const drawRoutes = useCallback((routeData: Record<string, [number, number][]>, visibleSet?: Set<string>, pointsPerVehicle?: Record<string, number>) => {
         if (!mapRef.current) return;
 
         if (routeLayers) {
@@ -236,12 +264,47 @@ export function MapPage() {
         }
 
         const newLayerGroup = L.layerGroup().addTo(mapRef.current);
+        const vehicleKeys = Object.keys(routeData);
+        const activeVisibleSet = visibleSet ?? new Set(vehicleKeys);
+        const activePointsPerVehicle = pointsPerVehicle ?? visiblePointsPerVehicle;
+
+        // Always draw the depot marker (from first vehicle's first coord)
+        let depotDrawn = false;
 
         Object.entries(routeData).forEach(([vehicleId, coords], index) => {
             const color = routeColors[index % routeColors.length];
+            const isVisible = activeVisibleSet.has(vehicleId);
+            const visibleStopCount = activePointsPerVehicle[vehicleId] ?? coords.length - 2;
 
+            // Draw depot marker once (from first vehicle that has coords)
+            if (!depotDrawn && coords.length > 0) {
+                L.circleMarker(coords[0], {
+                    radius: 10,
+                    fillColor: '#000',
+                    color: '#fff',
+                    weight: 2,
+                    fillOpacity: 0.9,
+                })
+                    .addTo(newLayerGroup)
+                    .bindPopup('<b>Depósito Central</b>');
+                depotDrawn = true;
+            }
 
-            const polyline = L.polyline(coords, {
+            if (!isVisible) return;
+
+            // Build the visible portion of the route
+            // coords[0] = depot, coords[1..n-1] = stops, coords[n] = return to depot
+            const visibleCoords: [number, number][] = [
+                coords[0], // always include depot
+                ...coords.slice(1, 1 + visibleStopCount), // visible stops
+            ];
+
+            // If all stops are visible, include return to depot
+            if (visibleStopCount >= coords.length - 2) {
+                visibleCoords.push(coords[coords.length - 1]);
+            }
+
+            const polyline = L.polyline(visibleCoords, {
                 color,
                 weight: 4,
                 opacity: 0.8,
@@ -249,42 +312,90 @@ export function MapPage() {
             }).addTo(newLayerGroup);
 
             coords.forEach((coord, pointIndex) => {
-                if (pointIndex === 0) {
-                    L.circleMarker(coord, {
-                        radius: 10,
-                        fillColor: '#000',
-                        color: '#fff',
-                        weight: 2,
-                        fillOpacity: 0.9,
-                    })
-                        .addTo(newLayerGroup)
-                        .bindPopup('<b>Depósito Central</b>');
-                } else if (pointIndex === coords.length - 1) {
-                } else {
-                    L.circleMarker(coord, {
-                        radius: 8,
-                        fillColor: color,
-                        color: '#fff',
-                        weight: 2,
-                        fillOpacity: 0.9,
-                    })
-                        .addTo(newLayerGroup)
-                        .bindPopup(`<b>Vehículo ${parseInt(vehicleId) + 1}</b><br>Parada ${pointIndex}`);
+                // Skip first (depot) and last (return to depot) points for stop markers
+                if (pointIndex === 0 || pointIndex === coords.length - 1) {
+                    return;
                 }
+                // Only draw markers for visible stops
+                if (pointIndex > visibleStopCount) {
+                    return;
+                }
+                L.circleMarker(coord, {
+                    radius: 8,
+                    fillColor: color,
+                    color: '#fff',
+                    weight: 2,
+                    fillOpacity: 0.9,
+                })
+                    .addTo(newLayerGroup)
+                    .bindPopup(`<b>Vehículo ${parseInt(vehicleId) + 1}</b><br>Parada ${pointIndex}`);
             });
 
-            if (coords.length > 0) {
+            if (visibleCoords.length > 0) {
                 mapRef.current?.fitBounds(polyline.getBounds().pad(0.1));
             }
         });
 
         setRouteLayers(newLayerGroup);
+    }, [routeLayers, visiblePointsPerVehicle]);
+
+    const toggleVehicleVisibility = (vehicleId: string) => {
+        setVisibleVehicles((prev: Set<string>) => {
+            const newSet = new Set(prev);
+            if (newSet.has(vehicleId)) {
+                newSet.delete(vehicleId);
+            } else {
+                newSet.add(vehicleId);
+            }
+            return newSet;
+        });
     };
+
+    const toggleAllVehicles = () => {
+        const allVehicleIds = Object.keys(routes);
+        if (visibleVehicles.size === allVehicleIds.length) {
+            // All visible, hide all
+            setVisibleVehicles(new Set());
+        } else {
+            // Some hidden, show all
+            setVisibleVehicles(new Set(allVehicleIds));
+        }
+    };
+
+    // Show next stop for all vehicles
+    const showNextStop = () => {
+        setVisiblePointsPerVehicle(prev => {
+            const updated: Record<string, number> = {};
+            Object.keys(routes).forEach(vehicleId => {
+                const maxStops = routes[vehicleId].length - 2;
+                const currentVisible = prev[vehicleId] ?? 2;
+                updated[vehicleId] = Math.min(currentVisible + 1, maxStops);
+            });
+            return updated;
+        });
+    };
+
+    // Toggle visibility for a specific point on a specific vehicle
+    const setVisibleStopsForVehicle = (vehicleId: string, count: number) => {
+        setVisiblePointsPerVehicle(prev => ({
+            ...prev,
+            [vehicleId]: count,
+        }));
+    };
+
+    // Effect to redraw routes when visibility changes
+    useEffect(() => {
+        if (Object.keys(routes).length > 0) {
+            drawRoutes(routes, visibleVehicles, visiblePointsPerVehicle);
+        }
+    }, [visibleVehicles, visiblePointsPerVehicle]);
 
     const clearRoutes = () => {
         if (routeLayers) {
             routeLayers.clearLayers();
             setRoutes({});
+            setVisibleVehicles(new Set());
+            setVisiblePointsPerVehicle({});
         }
     };
 
@@ -467,28 +578,108 @@ export function MapPage() {
             {Object.keys(routes).length > 0 && (
                 <Card className="border-t-4 border-t-blue-500">
                     <CardContent className="py-4">
-                        <div className="flex flex-wrap gap-3 items-center">
-                            <span className="text-sm font-semibold">Rutas Optimizadas:</span>
-                            {Object.keys(routes).map((vehicleId, index) => (
-                                <div
-                                    key={vehicleId}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-full border"
-                                    style={{
-                                        borderColor: routeColors[index % routeColors.length],
-                                        backgroundColor: `${routeColors[index % routeColors.length]}15`
-                                    }}
-                                >
-                                    <div
-                                        className="w-3 h-3 rounded-full"
-                                        style={{ backgroundColor: routeColors[index % routeColors.length] }}
-                                    />
-                                    <Truck className="w-4 h-4" />
-                                    <span className="text-sm font-medium">Vehículo {parseInt(vehicleId) + 1}</span>
+                        <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold">Filtrar Rutas:</span>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={showNextStop}
+                                        className="text-xs"
+                                    >
+                                        <ChevronRight className="w-3 h-3 mr-1" />
+                                        Mostrar Próxima Parada
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={toggleAllVehicles}
+                                        className="text-xs"
+                                    >
+                                        {visibleVehicles.size === Object.keys(routes).length ? (
+                                            <><EyeOff className="w-3 h-3 mr-1" /> Ocultar Todos</>
+                                        ) : (
+                                            <><Eye className="w-3 h-3 mr-1" /> Mostrar Todos</>
+                                        )}
+                                    </Button>
                                 </div>
-                            ))}
-                            <span className="text-xs text-muted-foreground ml-auto">
-                                📍 {routeLocations.length} puntos de entrega
-                            </span>
+                            </div>
+                            <div className="flex flex-col gap-3">
+                                {Object.keys(routes).map((vehicleId, index) => {
+                                    const isVisible = visibleVehicles.has(vehicleId);
+                                    const color = routeColors[index % routeColors.length];
+                                    const totalStops = routes[vehicleId].length - 2;
+                                    const visibleStops = visiblePointsPerVehicle[vehicleId] ?? totalStops;
+
+                                    return (
+                                        <div key={vehicleId} className="flex flex-col gap-2">
+                                            {/* Vehicle toggle row */}
+                                            <button
+                                                onClick={() => toggleVehicleVisibility(vehicleId)}
+                                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all cursor-pointer hover:scale-[1.02] ${isVisible ? 'opacity-100' : 'opacity-40'
+                                                    }`}
+                                                style={{
+                                                    borderColor: color,
+                                                    backgroundColor: isVisible ? `${color}15` : 'transparent',
+                                                }}
+                                            >
+                                                <Checkbox
+                                                    checked={isVisible}
+                                                    className="h-4 w-4 pointer-events-none"
+                                                    style={{
+                                                        borderColor: color,
+                                                        backgroundColor: isVisible ? color : 'transparent',
+                                                    }}
+                                                />
+                                                <div
+                                                    className="w-3 h-3 rounded-full"
+                                                    style={{ backgroundColor: color }}
+                                                />
+                                                <Truck className="w-4 h-4" />
+                                                <span className="text-sm font-medium">Vehículo {parseInt(vehicleId) + 1}</span>
+                                                <span className="text-xs text-muted-foreground ml-auto">
+                                                    {visibleStops}/{totalStops} paradas visibles
+                                                </span>
+                                            </button>
+
+                                            {/* Point-specific controls */}
+                                            {isVisible && totalStops > 0 && (
+                                                <div className="flex flex-wrap gap-1 ml-6">
+                                                    {Array.from({ length: totalStops }, (_, i) => {
+                                                        const pointNum = i + 1;
+                                                        const isPointVisible = pointNum <= visibleStops;
+                                                        return (
+                                                            <button
+                                                                key={`${vehicleId}-point-${pointNum}`}
+                                                                onClick={() => setVisibleStopsForVehicle(vehicleId, isPointVisible ? pointNum - 1 : pointNum)}
+                                                                className={`flex items-center gap-1 px-2 py-1 rounded text-xs border transition-all ${isPointVisible ? 'opacity-100' : 'opacity-40'
+                                                                    }`}
+                                                                style={{
+                                                                    borderColor: color,
+                                                                    backgroundColor: isPointVisible ? `${color}20` : 'transparent',
+                                                                }}
+                                                                title={isPointVisible ? `Ocultar parada ${pointNum}` : `Mostrar parada ${pointNum}`}
+                                                            >
+                                                                <MapPin className="w-3 h-3" style={{ color: isPointVisible ? color : 'currentColor' }} />
+                                                                <span>{pointNum}</span>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-2">
+                                <span>
+                                    👁️ {visibleVehicles.size}/{Object.keys(routes).length} vehículos visibles
+                                </span>
+                                <span>
+                                    📍 {Object.keys(routes).reduce((sum, id) => sum + (visiblePointsPerVehicle[id] ?? 0), 0)} / {routeLocations.length} paradas visibles
+                                </span>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
