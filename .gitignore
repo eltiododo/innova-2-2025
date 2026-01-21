@@ -50,6 +50,9 @@ frontend/.next/
 frontend/out/
 frontend/build/
 
+# Backend Build
+backend/.env
+
 # Environment Variables
 .env
 .env.local

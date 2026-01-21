@@ -48,6 +48,7 @@ services:
       ML_API_URL: http://innova-ml-api:8000/predict
       EMAIL_USERNAME: ${EMAIL_USERNAME:-your-email@gmail.com}
       EMAIL_PASSWORD: ${EMAIL_PASSWORD:-your-app-password}
+      CORS_ALLOWED_ORIGINS: "https://fleetiq.solarworks.cl,http://localhost:5173,http://localhost:3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -64,8 +65,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5173:5173"
-    environment:
-      - VITE_GRAPHQL_ENDPOINT=http://localhost:8080/graphql
+    env_file:
+      - ./frontend/.env
     volumes:
       - ./frontend/src:/app/src # Hot reload for dev
       - ./frontend/public:/app/public
