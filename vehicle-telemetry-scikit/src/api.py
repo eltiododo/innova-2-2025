@@ -3,16 +3,28 @@ import pandas as pd
 import joblib
 import numpy as np
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from .data_loader import load_and_preprocess_data
 from .predictive_maintenance import train_maintenance_model
-from .route_optimization import optimize_single_route
+from .route_optimization import optimize_single_route, solve_tsp_greedy
 
 app = FastAPI(
     title="Fleet Management ML API",
     description="API for Vehicle Predictive Maintenance and Route Optimization",
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Global variables to store models and data
@@ -64,6 +76,13 @@ class RouteResponse(BaseModel):
     departure_time: str
     arrival_time: str
 
+class OptimizeRoutesRequest(BaseModel):
+    locations: List[Location]
+    n_vehicles: int
+
+class OptimizeRoutesResponse(BaseModel):
+    routes: Dict[str, List[tuple]]
+
 @app.post("/predict", response_model=PredictionResponse)
 def predict_maintenance(data: VehicleData):
     global model
@@ -97,10 +116,34 @@ def predict_maintenance(data: VehicleData):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/optimize-routes", response_model=RouteResponse)
-def get_optimized_routes(request: RouteRequest):
+@app.post("/optimize-routes", response_model=OptimizeRoutesResponse)
+def get_optimized_routes(request: OptimizeRoutesRequest):
     try:
-        # Call the new optimization logic
+        if request.n_vehicles <= 0:
+            raise HTTPException(status_code=400, detail="n_vehicles must be greater than 0")
+        if not request.locations:
+            return OptimizeRoutesResponse(routes={})
+
+        points = [(loc.lat, loc.long) for loc in request.locations]
+        locations_per_vehicle = max(1, int(np.ceil(len(points) / request.n_vehicles)))
+
+        routes: Dict[str, List[tuple]] = {}
+        for i in range(request.n_vehicles):
+            start_idx = i * locations_per_vehicle
+            end_idx = min(start_idx + locations_per_vehicle, len(points))
+            chunk = points[start_idx:end_idx]
+            if not chunk:
+                continue
+            path, _ = solve_tsp_greedy(chunk)
+            routes[str(i)] = path
+
+        return OptimizeRoutesResponse(routes=routes)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/optimize-route", response_model=RouteResponse)
+def get_optimized_route(request: RouteRequest):
+    try:
         result = optimize_single_route(
             request.start_location.lat, request.start_location.long,
             request.end_location.lat, request.end_location.long,
@@ -108,8 +151,6 @@ def get_optimized_routes(request: RouteRequest):
             request.arrival_time,
             request.vehicle_id
         )
-        
         return RouteResponse(**result)
-        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

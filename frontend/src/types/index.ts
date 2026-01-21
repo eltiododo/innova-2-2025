@@ -14,6 +14,11 @@ export interface RouteLocation {
     long: number;
 }
 
+export interface Point {
+    x: number;
+    y: number;
+}
+
 export interface OptimizeRoutesRequest {
     locations: RouteLocation[];
     n_vehicles: number;
@@ -71,6 +76,29 @@ export interface Vehicle {
 export interface VehicleWithStatus extends Vehicle {
     status: VehicleStatus;
     maintenanceTickets?: MaintenanceTicket[];
+}
+
+export interface TravelLog {
+    id: string;
+    vehicle: Vehicle;
+    startPosition: Point;
+    endPosition: Point;
+    avgSpeed?: number;
+    avgAcceleration?: number;
+    state?: string;
+    arrivalTime?: string;
+    createdAt?: string;
+}
+
+export interface TravelLogInput {
+    vehicleId: string;
+    startLatitude: number;
+    startLongitude: number;
+    endLatitude?: number;
+    endLongitude?: number;
+    avgSpeed?: number;
+    avgAcceleration?: number;
+    state?: string;
 }
 
 export type VehicleAction =

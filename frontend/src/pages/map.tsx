@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +20,8 @@ import {
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { optimizeRoutes } from '@/services/ml-api';
-import type { RouteLocation } from '@/types';
+import { getTravelLogs } from '@/services/travel-logs';
+import type { RouteLocation, TravelLog } from '@/types';
 
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -57,15 +59,80 @@ const routeColors = [
 
 type ViewMode = 'vehicles' | 'routes' | 'heatmap';
 
+const SANTIAGO_BOUNDS = {
+    minLat: -34.2,
+    maxLat: -33.0,
+    minLong: -71.5,
+    maxLong: -70.3,
+};
+
+const isWithinBounds = (lat: number, long: number) =>
+    lat >= SANTIAGO_BOUNDS.minLat &&
+    lat <= SANTIAGO_BOUNDS.maxLat &&
+    long >= SANTIAGO_BOUNDS.minLong &&
+    long <= SANTIAGO_BOUNDS.maxLong;
+
 export function MapPage() {
     const mapRef = useRef<L.Map | null>(null);
     const mapContainerRef = useRef<HTMLDivElement>(null);
+    const markerLayerRef = useRef<L.LayerGroup | null>(null);
     const [viewMode, setViewMode] = useState<ViewMode>('vehicles');
     const [numVehicles, setNumVehicles] = useState('3');
     const [routes, setRoutes] = useState<Record<string, [number, number][]>>({});
     const [loading, setLoading] = useState(false);
     const [routeLayers, setRouteLayers] = useState<L.LayerGroup | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const { data: travelLogs = [], isLoading: travelLoading } = useQuery({
+        queryKey: ['travelLogs'],
+        queryFn: getTravelLogs,
+    });
+
+    const filteredTravelLogs = useMemo(
+        () =>
+            travelLogs.filter((log) => {
+                const startOk = isWithinBounds(log.startPosition.x, log.startPosition.y);
+                const endOk = log.endPosition
+                    ? isWithinBounds(log.endPosition.x, log.endPosition.y)
+                    : false;
+                return startOk || endOk;
+            }),
+        [travelLogs]
+    );
+
+    const routeLocations = useMemo<RouteLocation[]>(() => {
+        if (filteredTravelLogs.length === 0) {
+            return sampleLocations;
+        }
+        return filteredTravelLogs
+            .map((log) => ({
+                lat: log.startPosition.x,
+                long: log.startPosition.y,
+            }))
+            .filter((loc) => Number.isFinite(loc.lat) && Number.isFinite(loc.long));
+    }, [filteredTravelLogs]);
+
+    const mapMarkers = useMemo(() => {
+        if (filteredTravelLogs.length === 0) {
+            return sampleLocations.map((loc, index) => ({
+                id: `sample-${index}`,
+                label: `Punto de entrega ${index + 1}`,
+                lat: loc.lat,
+                long: loc.long,
+            }));
+        }
+        return filteredTravelLogs.map((log: TravelLog) => {
+            const position =
+                log.state === 'ARRIVED' && log.endPosition
+                    ? { lat: log.endPosition.x, long: log.endPosition.y }
+                    : { lat: log.startPosition.x, long: log.startPosition.y };
+            return {
+                id: log.id,
+                label: `Vehículo ${log.vehicle?.patente ?? log.vehicle?.id ?? log.id}`,
+                lat: position.lat,
+                long: position.long,
+            };
+        });
+    }, [filteredTravelLogs]);
 
     useEffect(() => {
         if (mapContainerRef.current && !mapRef.current) {
@@ -77,14 +144,6 @@ export function MapPage() {
                     subdomains: 'abcd',
                     maxZoom: 19,
                 }).addTo(mapRef.current);
-
-                sampleLocations.forEach((loc, index) => {
-                    if (mapRef.current) {
-                        L.marker([loc.lat, loc.long])
-                            .addTo(mapRef.current)
-                            .bindPopup(`<b>Punto de entrega ${index + 1}</b><br>Lat: ${loc.lat.toFixed(4)}<br>Long: ${loc.long.toFixed(4)}`);
-                    }
-                });
 
                 setError(null);
             } catch (err) {
@@ -101,12 +160,39 @@ export function MapPage() {
         };
     }, []);
 
+    useEffect(() => {
+        if (!mapRef.current) return;
+
+        if (markerLayerRef.current) {
+            markerLayerRef.current.clearLayers();
+        }
+
+        const newLayer = L.layerGroup().addTo(mapRef.current);
+
+        if (viewMode === 'vehicles') {
+            mapMarkers.forEach((marker) => {
+                if (!Number.isFinite(marker.lat) || !Number.isFinite(marker.long)) return;
+                L.marker([marker.lat, marker.long])
+                    .addTo(newLayer)
+                    .bindPopup(
+                        `<b>${marker.label}</b><br>Lat: ${marker.lat.toFixed(4)}<br>Long: ${marker.long.toFixed(4)}`
+                    );
+            });
+        }
+
+        markerLayerRef.current = newLayer;
+    }, [mapMarkers, viewMode]);
+
     const handleOptimizeRoutes = async () => {
         setLoading(true);
         setError(null);
         try {
+            if (routeLocations.length === 0) {
+                setError('No hay ubicaciones disponibles para optimizar rutas.');
+                return;
+            }
             const result = await optimizeRoutes({
-                locations: sampleLocations,
+                locations: routeLocations,
                 n_vehicles: parseInt(numVehicles),
             });
             setRoutes(result.routes);
@@ -114,7 +200,7 @@ export function MapPage() {
         } catch (error) {
             console.error('Error optimizing routes:', error);
             setError('Error al optimizar rutas. Usando rutas de demostración.');
-            const mockRoutes = generateMockRoutes(parseInt(numVehicles));
+            const mockRoutes = generateMockRoutes(parseInt(numVehicles), routeLocations);
             setRoutes(mockRoutes);
             drawRoutes(mockRoutes);
         } finally {
@@ -122,19 +208,20 @@ export function MapPage() {
         }
     };
 
-    const generateMockRoutes = (n: number): Record<string, [number, number][]> => {
+    const generateMockRoutes = (n: number, locations: RouteLocation[]): Record<string, [number, number][]> => {
+        if (locations.length === 0) return {};
         const result: Record<string, [number, number][]> = {};
-        const locationsPerVehicle = Math.ceil(sampleLocations.length / n);
+        const locationsPerVehicle = Math.ceil(locations.length / n);
 
         for (let i = 0; i < n; i++) {
             const start = i * locationsPerVehicle;
-            const end = Math.min(start + locationsPerVehicle, sampleLocations.length);
-            const vehicleLocations = sampleLocations.slice(start, end);
+            const end = Math.min(start + locationsPerVehicle, locations.length);
+            const vehicleLocations = locations.slice(start, end);
 
             result[i.toString()] = [
-                [sampleLocations[0].lat, sampleLocations[0].long],
+                [locations[0].lat, locations[0].long],
                 ...vehicleLocations.map(l => [l.lat, l.long] as [number, number]),
-                [sampleLocations[0].lat, sampleLocations[0].long],
+                [locations[0].lat, locations[0].long],
             ];
         }
 
@@ -227,6 +314,36 @@ export function MapPage() {
                         </div>
                         <div className="ml-3">
                             <p className="text-sm text-yellow-700">{error}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {travelLogs.length > 0 && filteredTravelLogs.length === 0 && (
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+                    <div className="flex">
+                        <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12H9v-2h2v2zm0-4H9V6h2v4z" />
+                            </svg>
+                        </div>
+                        <div className="ml-3">
+                            <p className="text-sm text-blue-700">
+                                Las coordenadas de la DB no están en Santiago. Usando datos demo locales.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {travelLoading && (
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+                    <div className="flex">
+                        <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12H9v-2h2v2zm0-4H9V6h2v4z" />
+                            </svg>
+                        </div>
+                        <div className="ml-3">
+                            <p className="text-sm text-blue-700">Cargando ubicaciones desde la base de datos...</p>
                         </div>
                     </div>
                 </div>
@@ -370,7 +487,7 @@ export function MapPage() {
                                 </div>
                             ))}
                             <span className="text-xs text-muted-foreground ml-auto">
-                                📍 {sampleLocations.length} puntos de entrega
+                                📍 {routeLocations.length} puntos de entrega
                             </span>
                         </div>
                     </CardContent>
