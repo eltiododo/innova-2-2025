@@ -13,7 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/qr")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"})
+@CrossOrigin(origins = {System.getenv("CORS_ALLOWED_ORIGINS"), "http://localhost:5173", "http://localhost:3000"})
 public class QREmailController {
 
     private final EmailService emailService;
@@ -59,11 +59,11 @@ public class QREmailController {
 
     private String getEmailSubject(String action) {
         return switch (action) {
-            case "status" -> "📋 Código QR - Consulta de Estado del Vehículo";
-            case "pickup" -> "🚛 Código QR - Programar Recogida del Vehículo";
-            case "maintenance" -> "🔧 Código QR - Solicitud de Mantenimiento";
-            case "history" -> "📊 Código QR - Historial del Vehículo";
-            default -> "🚗 Código QR - Información del Vehículo";
+            case "status" -> "Código QR - Consulta de Estado del Vehículo";
+            case "pickup" -> "Código QR - Programar Recogida del Vehículo";
+            case "maintenance" -> "Código QR - Solicitud de Mantenimiento";
+            case "history" -> "Código QR - Historial del Vehículo";
+            default -> "Código QR - Información del Vehículo";
         };
     }
 
