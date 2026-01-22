@@ -13,7 +13,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/qr")
-@CrossOrigin(origins = {System.getenv("CORS_ALLOWED_ORIGINS"), "http://localhost:5173", "http://localhost:3000"})
 public class QREmailController {
 
     private final EmailService emailService;
