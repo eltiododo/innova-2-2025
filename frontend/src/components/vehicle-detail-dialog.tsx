@@ -70,7 +70,7 @@ export function VehicleDetailDialog({ vehicle, open, onOpenChange }: VehicleDeta
         try {
             const vehicleData = `Patente: ${vehicle?.patente}\nMarca: ${vehicle?.marca}\nModelo: ${vehicle?.modelo}\nKM: ${vehicle?.kmRecorrido}`;
             
-            const response = await fetch('http://localhost:8080/api/qr/send-email', {
+            const response = await fetch(import.meta.env.VITE_GRAPHQL_URL + '/api/qr/send-email' || 'http://localhost:8080/api/qr/send-email', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

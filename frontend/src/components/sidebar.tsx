@@ -50,7 +50,7 @@ export const Sidebar = observer(function Sidebar() {
       <div className="flex h-full flex-col">
         <div className="flex h-16 items-center border-b px-6">
           <Truck className="h-6 w-6 text-primary" />
-          <span className="ml-2 text-lg font-bold">Innova Fleet</span>
+          <span className="ml-2 text-lg font-bold">FleetIQ</span>
         </div>
 
         <nav className="flex-1 space-y-1 p-4">

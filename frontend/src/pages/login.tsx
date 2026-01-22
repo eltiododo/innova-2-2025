@@ -24,7 +24,7 @@ export const LoginPage = observer(function LoginPage() {
 						<Truck className="h-12 w-12 text-blue-500" />
 					</div>
 					<CardTitle className="text-2xl text-center">
-						Innova Fleet
+						FleetIQ
 					</CardTitle>
 					<p className="text-center text-muted-foreground">
 						Ingresa tus credenciales para continuar

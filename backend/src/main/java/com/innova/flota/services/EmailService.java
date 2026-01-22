@@ -46,7 +46,7 @@ public class EmailService {
             <body>
                 <div class="container">
                     <div class="header">
-                        <h1> Innova Fleet Management</h1>
+                        <h1> FleetIQ Management</h1>
                     </div>
                     <div class="content">
                         <p>Estimado/a usuario/a,</p>
@@ -54,10 +54,10 @@ public class EmailService {
                         <p>Adjunto encontrará el código QR solicitado con toda la información necesaria.</p>
                         <p><strong>Importante:</strong> Este código QR es único y contiene información sensible acerca del vehículo. Por favor, no lo comparta con terceros.</p>
                         <p>Si tiene alguna pregunta o necesita asistencia adicional, no dude en contactarnos.</p>
-                        <p>Saludos cordiales,<br><strong>Equipo Innova Fleet</strong></p>
+                        <p>Saludos cordiales,<br><strong>Equipo FleetIQ</strong></p>
                     </div>
                     <div class="footer">
-                        <p>© 2026 Innova Fleet Management. Todos los derechos reservados.</p>
+                        <p>© 2026 FleetIQ Management. Todos los derechos reservados.</p>
                     </div>
                 </div>
             </body>
